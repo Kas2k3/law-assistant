@@ -1,0 +1,442 @@
+{
+  "k=3": {
+    "top_k": 3,
+    "average_metrics": {
+      "retrieval_metrics": {
+        "precision@k": 0.8666666666666666,
+        "recall@k": 0.7,
+        "hit@k": 1.0,
+        "ndcg@k": 0.9061442547954487
+      },
+      "response_metrics": {
+        "rouge_l": 0.37282101272858237,
+        "bleu": 0.12290847937910099,
+        "semantic_similarity": 0.7875201225280761
+      }
+    },
+    "detailed_results": [
+      {
+        "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 1.0,
+          "recall@k": 0.75,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.4174265450861196,
+          "bleu": 0.23734003785777008,
+          "semantic_similarity": 0.7871652841567993
+        }
+      },
+      {
+        "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.6666666666666666,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3781942078364566,
+          "bleu": 0.10947949305645083,
+          "semantic_similarity": 0.8612182140350342
+        }
+      },
+      {
+        "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+        "retrieval_metrics": {
+          "precision@k": 1.0,
+          "recall@k": 0.75,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.34368530020703936,
+          "bleu": 0.09271132587680563,
+          "semantic_similarity": 0.6892464756965637
+        }
+      },
+      {
+        "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.6666666666666666,
+          "recall@k": 0.5,
+          "hit@k": 1.0,
+          "ndcg@k": 0.5307212739772434
+        },
+        "response_metrics": {
+          "rouge_l": 0.39146567717996295,
+          "bleu": 0.12565638246872063,
+          "semantic_similarity": 0.8093995451927185
+        }
+      },
+      {
+        "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+        "retrieval_metrics": {
+          "precision@k": 1.0,
+          "recall@k": 0.5,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3333333333333333,
+          "bleu": 0.04935515763575767,
+          "semantic_similarity": 0.7905710935592651
+        }
+      }
+    ]
+  },
+  "k=5": {
+    "top_k": 5,
+    "average_metrics": {
+      "retrieval_metrics": {
+        "precision@k": 0.72,
+        "recall@k": 0.9166666666666666,
+        "hit@k": 1.0,
+        "ndcg@k": 0.9219239900015797
+      },
+      "response_metrics": {
+        "rouge_l": 0.37282101272858237,
+        "bleu": 0.12290847937910099,
+        "semantic_similarity": 0.7875201225280761
+      }
+    },
+    "detailed_results": [
+      {
+        "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.8,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.4174265450861196,
+          "bleu": 0.23734003785777008,
+          "semantic_similarity": 0.7871652841567993
+        }
+      },
+      {
+        "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3781942078364566,
+          "bleu": 0.10947949305645083,
+          "semantic_similarity": 0.8612182140350342
+        }
+      },
+      {
+        "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+        "retrieval_metrics": {
+          "precision@k": 0.8,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.34368530020703936,
+          "bleu": 0.09271132587680563,
+          "semantic_similarity": 0.6892464756965637
+        }
+      },
+      {
+        "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.6,
+          "recall@k": 0.75,
+          "hit@k": 1.0,
+          "ndcg@k": 0.6096199500078984
+        },
+        "response_metrics": {
+          "rouge_l": 0.39146567717996295,
+          "bleu": 0.12565638246872063,
+          "semantic_similarity": 0.8093995451927185
+        }
+      },
+      {
+        "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+        "retrieval_metrics": {
+          "precision@k": 1.0,
+          "recall@k": 0.8333333333333334,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3333333333333333,
+          "bleu": 0.04935515763575767,
+          "semantic_similarity": 0.7905710935592651
+        }
+      }
+    ]
+  },
+  "k=10": {
+    "top_k": 10,
+    "average_metrics": {
+      "retrieval_metrics": {
+        "precision@k": 0.38,
+        "recall@k": 0.9666666666666666,
+        "hit@k": 1.0,
+        "ndcg@k": 0.9281773949988326
+      },
+      "response_metrics": {
+        "rouge_l": 0.37282101272858237,
+        "bleu": 0.12290847937910099,
+        "semantic_similarity": 0.7875201225280761
+      }
+    },
+    "detailed_results": [
+      {
+        "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.4174265450861196,
+          "bleu": 0.23734003785777008,
+          "semantic_similarity": 0.7871652841567993
+        }
+      },
+      {
+        "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3781942078364566,
+          "bleu": 0.10947949305645083,
+          "semantic_similarity": 0.8612182140350342
+        }
+      },
+      {
+        "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+        "retrieval_metrics": {
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.34368530020703936,
+          "bleu": 0.09271132587680563,
+          "semantic_similarity": 0.6892464756965637
+        }
+      },
+      {
+        "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.4,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 0.7486761295186739
+        },
+        "response_metrics": {
+          "rouge_l": 0.39146567717996295,
+          "bleu": 0.12565638246872063,
+          "semantic_similarity": 0.8093995451927185
+        }
+      },
+      {
+        "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+        "retrieval_metrics": {
+          "precision@k": 0.5,
+          "recall@k": 0.8333333333333334,
+          "hit@k": 1.0,
+          "ndcg@k": 0.892210845475489
+        },
+        "response_metrics": {
+          "rouge_l": 0.3333333333333333,
+          "bleu": 0.04935515763575767,
+          "semantic_similarity": 0.7905710935592651
+        }
+      }
+    ]
+  },
+  "k=15": {
+    "top_k": 15,
+    "average_metrics": {
+      "retrieval_metrics": {
+        "precision@k": 0.2533333333333333,
+        "recall@k": 0.9666666666666666,
+        "hit@k": 1.0,
+        "ndcg@k": 0.9281773949988326
+      },
+      "response_metrics": {
+        "rouge_l": 0.37282101272858237,
+        "bleu": 0.12290847937910099,
+        "semantic_similarity": 0.7875201225280761
+      }
+    },
+    "detailed_results": [
+      {
+        "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.26666666666666666,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.4174265450861196,
+          "bleu": 0.23734003785777008,
+          "semantic_similarity": 0.7871652841567993
+        }
+      },
+      {
+        "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.13333333333333333,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3781942078364566,
+          "bleu": 0.10947949305645083,
+          "semantic_similarity": 0.8612182140350342
+        }
+      },
+      {
+        "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+        "retrieval_metrics": {
+          "precision@k": 0.26666666666666666,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.34368530020703936,
+          "bleu": 0.09271132587680563,
+          "semantic_similarity": 0.6892464756965637
+        }
+      },
+      {
+        "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.26666666666666666,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 0.7486761295186739
+        },
+        "response_metrics": {
+          "rouge_l": 0.39146567717996295,
+          "bleu": 0.12565638246872063,
+          "semantic_similarity": 0.8093995451927185
+        }
+      },
+      {
+        "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+        "retrieval_metrics": {
+          "precision@k": 0.3333333333333333,
+          "recall@k": 0.8333333333333334,
+          "hit@k": 1.0,
+          "ndcg@k": 0.892210845475489
+        },
+        "response_metrics": {
+          "rouge_l": 0.3333333333333333,
+          "bleu": 0.04935515763575767,
+          "semantic_similarity": 0.7905710935592651
+        }
+      }
+    ]
+  },
+  "k=20": {
+    "top_k": 20,
+    "average_metrics": {
+      "retrieval_metrics": {
+        "precision@k": 0.2,
+        "recall@k": 1.0,
+        "hit@k": 1.0,
+        "ndcg@k": 0.9429837639005862
+      },
+      "response_metrics": {
+        "rouge_l": 0.37282101272858237,
+        "bleu": 0.12290847937910099,
+        "semantic_similarity": 0.7875201225280761
+      }
+    },
+    "detailed_results": [
+      {
+        "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.4174265450861196,
+          "bleu": 0.23734003785777008,
+          "semantic_similarity": 0.7871652841567993
+        }
+      },
+      {
+        "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.1,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.3781942078364566,
+          "bleu": 0.10947949305645083,
+          "semantic_similarity": 0.8612182140350342
+        }
+      },
+      {
+        "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+        "retrieval_metrics": {
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 1.0
+        },
+        "response_metrics": {
+          "rouge_l": 0.34368530020703936,
+          "bleu": 0.09271132587680563,
+          "semantic_similarity": 0.6892464756965637
+        }
+      },
+      {
+        "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+        "retrieval_metrics": {
+          "precision@k": 0.2,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 0.7486761295186739
+        },
+        "response_metrics": {
+          "rouge_l": 0.39146567717996295,
+          "bleu": 0.12565638246872063,
+          "semantic_similarity": 0.8093995451927185
+        }
+      },
+      {
+        "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+        "retrieval_metrics": {
+          "precision@k": 0.3,
+          "recall@k": 1.0,
+          "hit@k": 1.0,
+          "ndcg@k": 0.9662426899842573
+        },
+        "response_metrics": {
+          "rouge_l": 0.3333333333333333,
+          "bleu": 0.04935515763575767,
+          "semantic_similarity": 0.7905710935592651
+        }
+      }
+    ]
+  }
+}

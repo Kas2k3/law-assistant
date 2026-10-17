@@ -1,0 +1,28 @@
+elasticsearch>=8.13.0
+python-dotenv
+uvicorn
+fastapi
+numpy
+pandas
+faiss-cpu
+sentence-transformers
+sqlitedict
+openai>=1.90.0
+torch
+sentencepiece
+# huggingface_hub
+# vllm
+langchain==0.3.*
+langchain_community==0.3.*
+pymilvus==2.4.*
+scikit-learn==1.5.*
+# optional
+hdbscan
+rank_bm25
+
+markdown
+pymongo
+
+neo4j
+tavily-python
+nest_asyncio

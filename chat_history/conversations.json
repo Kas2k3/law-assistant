@@ -1,0 +1,78 @@
+{
+  "58c242a2-6870-4ced-a150-c5ac5fae3891": {
+    "title": "Giấy tờ cần thiết đăng ký kết hôn",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Thủ tục đăng ký kết hôn cần những giấy tờ gì vậy"
+      },
+      {
+        "role": "assistant",
+        "content": "Thái độ: neutral_info --- Elasticsearch hết bản dùng thử rồi, thử lại sau vậy huhuhu\n Yêu cầu người dùng: Thủ tục đăng ký kết hôn yêu cầu những giấy tờ gì? "
+      },
+      {
+        "role": "user",
+        "content": "Có quy định gì về trang phục không?"
+      },
+      {
+        "role": "assistant",
+        "content": "Thái độ: neutral_info --- Elasticsearch hết bản dùng thử rồi, thử lại sau vậy huhuhu\n Yêu cầu người dùng: Có quy định nào về trang phục khi thực hiện thủ tục đăng ký kết hôn không? "
+      }
+    ],
+    "pinned": false,
+    "created_at": "2025-11-11T15:39:28.540369",
+    "updated_at": "2025-11-11T15:40:41.744743"
+  },
+  "1bf3441e-cab9-47bf-b404-0dc551964b53": {
+    "title": "Xử phạt hành vi chống đối công vụ",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?"
+      },
+      {
+        "role": "assistant",
+        "content": "Thái độ: neutral_info --- Elasticsearch hết bản dùng thử rồi, thử lại sau vậy huhuhu\n Yêu cầu người dùng: Hành vi chống đối người thi hành công vụ sẽ bị xử phạt theo quy định nào trong pháp luật Việt Nam? "
+      }
+    ],
+    "pinned": false,
+    "created_at": "2025-11-11T15:40:04.599141",
+    "updated_at": "2025-11-11T15:40:12.159065"
+  },
+  "7ceff593-5a09-48b2-8908-5292f7ccaf61": {
+    "title": "Cuộc trò chuyện mới",
+    "messages": [
+      {
+        "role": "user",
+        "content": "chống đối người thi hành công vụ bị xử lý như thế nào?"
+      }
+    ],
+    "pinned": false,
+    "created_at": "2026-04-15T14:25:22.707961",
+    "updated_at": "2026-04-15T14:25:22.723779"
+  },
+  "89e94622-342a-4062-be42-0047f13d9f37": {
+    "title": "Tăng thời gian cải tạo khi đánh nhau trong tù",
+    "messages": [
+      {
+        "role": "user",
+        "content": "đánh nhau trong tù có bị tăng thời gian cải tạo không?"
+      },
+      {
+        "role": "assistant",
+        "content": "**Chưa đủ dữ liệu** để xác định quy định cụ thể về việc tăng thời gian cải tạo do đánh nhau trong tù. Hiện tại, không có thông tin trong các văn bản pháp luật được cung cấp liên quan đến việc này. Để có thông tin chính xác, bạn có thể tham khảo các quy định trong Luật Thi hành án hình sự hoặc các văn bản pháp luật liên quan đến quản lý, cải tạo phạm nhân. Vui lòng cung cấp thêm thông tin hoặc yêu cầu cụ thể hơn để tôi có thể hỗ trợ tốt hơn."
+      },
+      {
+        "role": "user",
+        "content": "Luật trí tuệ nhân tạo 2025"
+      },
+      {
+        "role": "assistant",
+        "content": "**Chưa đủ dữ liệu** để cung cấp thông tin chi tiết về Luật trí tuệ nhân tạo 2025, vì văn bản này chưa có hiệu lực cho đến ngày 01/3/2026. Tuy nhiên, theo thông tin từ các nguồn hiện có, Luật này sẽ quy định về nghiên cứu, phát triển, cung cấp, triển khai và sử dụng hệ thống trí tuệ nhân tạo, đồng thời xác lập quyền và nghĩa vụ của tổ chức, cá nhân trong lĩnh vực này.\n\nMột số điểm nổi bật trong Luật bao gồm:\n1. **Ưu đãi và hỗ trợ** cho tổ chức, cá nhân hoạt động trong lĩnh vực trí tuệ nhân tạo, bao gồm việc tiếp cận hạ tầng, dữ liệu và môi trường thử nghiệm.\n2. **Nguyên tắc hoạt động** của trí tuệ nhân tạo phải đặt con người ở vị trí trung tâm, bảo đảm quyền con người, quyền riêng tư và tuân thủ pháp luật.\n3. **Cấm lợi dụng AI** để thực hiện hành vi vi phạm pháp luật, như tạo nội dung giả mạo (deepfake) nhằm lừa đảo hoặc thao túng nhận thức.\n\nLuật Trí tuệ nhân tạo 2025 (Luật số 134/2025/QH15) được Quốc hội thông qua ngày 10/12/2025. \n\nNguồn tham khảo: [Web - tham khảo]\n\n---\n**Nguồn tham khảo từ web:**\n✅ [Web] [Luật Trí tuệ nhân tạo 2025, số 134/2025/QH15 - LuatVietnam](https://luatvietnam.vn/khoa-hoc/luat-tri-tue-nhan-tao-2025-so-134-2025-qh15-422299-d1.html)\n⚠️ [Web - tham khảo] [Luật Trí tuệ nhân tạo 2025 – Khung pháp lý toàn diện cho kỷ nguyên AI an toàn và phát triển bền vững](https://congan.daklak.gov.vn/an-ninh-doi-song/luat-tri-tue-nhan-tao-2025-khung-phap-ly-toan-dien-cho-ky-nguyen-ai-an-toan-va-phat-trien-ben-vung-11243.html)\n⚠️ [Web - tham khảo] [Luật Trí tuệ nhân tạo 2025 – Khung pháp lý toàn diện cho kỷ nguyên AI an toàn và phát triển bền vững](https://congan.daklak.gov.vn/tin-moi/luat-tri-tue-nhan-tao-2025-khung-phap-ly-toan-dien-cho-ky-nguyen-ai-an-toan-va-phat-trien-ben-vung-11243.html)\n⚠️ [Web - tham khảo] [[PDF] pháp luật về trí tuệ nhân tạo ở việt nam: định hướng hoàn](https://ai.siu.edu.vn/wp-content/uploads/2025/01/Bai-1-HT-1.-SIU.pdf)\n⚠️ [Web - tham khảo] [Luật Trí tuệ nhân tạo 2025- công cụ quản lý công nghệ, hành lang pháp lý bảo vệ người dân](https://antv.gov.vn/ban-hoi-luat-su-tra-loi-C5670893E/luat-tri-tue-nhan-tao-2025-cong-cu-quan-ly-cong-nghe-hanh-lang-phap-ly-bao-ve-nguoi-dan-1D827FB65.html)"
+      }
+    ],
+    "pinned": false,
+    "created_at": "2026-04-15T18:56:23.104182",
+    "updated_at": "2026-04-15T18:57:55.482328"
+  }
+}

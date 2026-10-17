@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# Secrets
+firebase-credentials.json
+*credentials*.json
+
+# Node
+node_modules/
+.next/
+out/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Docker volumes / local DB data
+test_raptor/volumes/
+**/volumes/

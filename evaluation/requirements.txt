@@ -1,0 +1,7 @@
+deepeval==2.7.1
+openai>=1.0.0
+langchain>=0.0.267
+numpy>=1.24.3
+pandas>=2.0.3
+matplotlib>=3.7.2
+seaborn>=0.12.2
