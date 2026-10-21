@@ -452,7 +452,7 @@ cảnh báo nào).
 
 - **2 Docker Compose riêng biệt** (không có compose tổng cho toàn hệ thống):
   - `law-crawler/docker-compose.yml`: MySQL 8.0 (`3306`) + phpMyAdmin (`8081`).
-  - `test_raptor/docker-compose.yml`: `etcd` (Milvus dependency) + `minio` + `milvus-standalone` (v2.4.14,
+  - `infra/docker-compose.yml`: `etcd` (Milvus dependency) + `minio` + `milvus-standalone` (v2.4.14,
     cổng `19530`/`9091`) + `neo4j:5` (cổng `7474` browser / `7687` bolt, `NEO4J_AUTH=neo4j/password123`).
 - **Code ứng dụng** (FastAPI, Next.js, Streamlit) chạy **trực tiếp trên host** (venv Python + `npm run dev`),
   **không containerize** — không có `Dockerfile` cho `rag_api.py` hay `frontend/` trong repo.

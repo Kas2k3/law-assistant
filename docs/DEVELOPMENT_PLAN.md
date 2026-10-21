@@ -48,7 +48,7 @@ tất. Thời lượng ước tính tính theo tuần làm việc bán thời gi
 **Mục tiêu**: mọi thành viên nhóm chạy được full stack từ repo này (`LLM_Prj1`), không phụ thuộc máy của
 người tạo repo gốc.
 
-- [ ] Dựng `law-crawler/docker-compose.yml` (MySQL) + `test_raptor/docker-compose.yml` (Milvus/Neo4j), chạy
+- [ ] Dựng `law-crawler/docker-compose.yml` (MySQL) + `infra/docker-compose.yml` (Milvus/Neo4j), chạy
       `law-crawler/main.py` → `data_processing/seed_data_batch.py` → `retrieve/build_graph.py` theo đúng thứ
       tự trong README.
 - [ ] Viết file `.env.example` ở root (hiện chưa có) tổng hợp **toàn bộ** biến ở `ARCHITECTURE.md` §13.

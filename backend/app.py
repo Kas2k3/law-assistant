@@ -1,9 +1,16 @@
+import sys
+from pathlib import Path
+
+# Cho phép chạy "streamlit run backend/app.py" từ bất kỳ thư mục nào
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import os
 import streamlit as st
 import streamlit.components.v1 as components
 from urllib.parse import urlencode
 import time
-from retrieve.elastic_search import retrieve_top_20_results
 from services.utils import rewrite_query_with_history, rewrite_query, rewrite_query_v2, generate_response, generate_chat_title, detect_intent, analyze_complex_situation, retrieve_parallel, generate_structured_response
 from services.history import save_chat, load_chats, rename_chat, delete_chat, create_new_chat, cleanup_empty_chats
 from agents.pipeline import run_pre_retrieve, Action

@@ -1,28 +1,31 @@
-elasticsearch>=8.13.0
-python-dotenv
-uvicorn
-fastapi
-numpy
-pandas
-faiss-cpu
-sentence-transformers
-sqlitedict
-openai>=1.90.0
-torch
-sentencepiece
+python-dotenv==1.2.4
+uvicorn==0.54.0
+fastapi==0.146.0
+python-multipart==0.0.32  # FastAPI cần cho UploadFile (/stt)
+numpy==2.5.4
+pandas==3.0.6
+faiss-cpu==1.15.1
+sentence-transformers==6.1.0
+sqlitedict==2.1.0
+openai==3.35.1
+torch==2.14.1
+sentencepiece==0.2.2
 # huggingface_hub
 # vllm
-langchain==0.3.*
-langchain_community==0.3.*
-pymilvus==2.4.*
-scikit-learn==1.5.*
+langchain==0.3.30
+langchain_community==0.3.31
+pymilvus==2.4.15
+setuptools==80.10.2  # pymilvus 2.4.x dùng pkg_resources (cần Python 3.12 venv, không có sẵn setuptools)
+scikit-learn==1.5.2
 # optional
-hdbscan
-rank_bm25
+hdbscan==0.8.40
+rank_bm25==0.2.2
 
-markdown
-pymongo
+markdown==3.11.1
+pymongo==4.19.0
 
-neo4j
-tavily-python
-nest_asyncio
+neo4j==6.4.1
+pymysql==2.2.8  # MySQL fallback (get_full_article, build_graph.py, seed_data_batch.py)
+tavily-python==0.8.5
+nest_asyncio==1.6.0
+pytest==9.1.1  # chạy tests/ (unit test thuần, không cần DB/OpenAI sống)

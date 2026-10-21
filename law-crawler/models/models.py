@@ -2,6 +2,12 @@ from db import db
 from peewee import *
 
 
+class LongTextField(TextField):
+    """MySQL LONGTEXT (4GB) — TextField mặc định là TEXT (giới hạn 64KB),
+    không đủ cho HTML bảng lớn trong một số điều luật."""
+    field_type = "LONGTEXT"
+
+
 class BaseModel(Model):
     class Meta:
         database = db
@@ -35,7 +41,7 @@ class PDDieu(BaseModel):
     # chuong_id = ForeignKeyField(PDChuong, backref="dieus", null=True, on_delete='SET NULL')
     chude_id = ForeignKeyField(PDChuDe, backref="dieus")
     mapc = CharField(max_length=128, primary_key=True)
-    noidung = TextField()
+    noidung = LongTextField()
     chimuc = IntegerField()
     vbqppl = TextField()
     vbqppl_link = TextField(null=True)
@@ -44,7 +50,7 @@ class PDDieu(BaseModel):
 
 class PDTable(BaseModel):
     dieu_id = ForeignKeyField(PDDieu, backref="tables")
-    html = TextField()
+    html = LongTextField()
 
 
 class PDFile(BaseModel):

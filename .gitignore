@@ -1,5 +1,10 @@
 # OS
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
 
 # Python
 __pycache__/
@@ -9,6 +14,10 @@ __pycache__/
 venv/
 .env
 .env.*
+!.env.example
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # Secrets
 firebase-credentials.json
@@ -25,5 +34,30 @@ build/
 .vscode/
 
 # Docker volumes / local DB data
-test_raptor/volumes/
+infra/volumes/
 **/volumes/
+
+# Pháp Điển crawl data — tải riêng theo README mục 2.1, không commit vào git
+law-crawler/phap-dien/chude.json
+law-crawler/phap-dien/demuc.json
+law-crawler/phap-dien/treeNode.json
+law-crawler/phap-dien/jsonData.js
+law-crawler/phap-dien/demuc/
+
+# Lịch sử chat thật (SQLite/JSON fallback) — dữ liệu người dùng, không commit
+chat_history/conversations.json
+chat_history/conversations.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Log lỗi embed sinh ra khi chạy data_processing/seed_data_batch.py
+data_processing/embed_errors.csv
+
+# Cache tạm trong lúc cài đặt (pip/npm trỏ ra ổ khác khi ổ C đầy) — không phải file project
+tmp_pip_cache/
+tmp_npm_cache/
+tmp_dir/
+
+# Cache truy xuất vector_search (sqlitedict) — dữ liệu cục bộ, không commit
+retrieve/.cache/

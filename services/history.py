@@ -460,20 +460,4 @@ def delete_chat(chat_id):
         if not _delete_chat_mongo(chat_id):
             _delete_chat_sqlite(chat_id)
 
-def save_tts_url(chat_id: str, msg_idx: int, tts_url: str) -> bool:
-    """Lưu URL audio TTS vào message tương ứng trong MongoDB."""
-    col = _get_mongo_collection()
-    if col is None:
-        print("[TTS] MongoDB không khả dụng, bỏ qua lưu URL")
-        return False
-    try:
-        result = col.update_one(
-            {"_id": chat_id},
-            {"$set": {f"messages.{msg_idx}.tts_url": tts_url}},
-        )
-        print(f"[TTS] Saved URL to MongoDB: chat={chat_id} msg={msg_idx}")
-        return result.modified_count > 0
-    except Exception as e:
-        print(f"[TTS MongoDB] Lỗi lưu URL: {e}")
-        return False
 
