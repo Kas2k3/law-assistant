@@ -92,7 +92,7 @@ export function PassageFullModal({
           <button
             onClick={onClose}
             className="rounded-lg px-3 py-1.5"
-            style={{ border: "0.5px solid #534AB7", color: "#534AB7" }}
+            style={{ border: "0.5px solid var(--accent)", color: "var(--accent)" }}
           >
             Đóng
           </button>
@@ -136,7 +136,7 @@ export function PassagePanel({
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                <BookOpen className="h-5 w-5 shrink-0" style={{ color: "#534AB7" }} />
+                <BookOpen className="h-5 w-5 shrink-0" style={{ color: "var(--accent)" }} />
                 <span>Căn cứ pháp lý</span>
               </div>
               <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -193,15 +193,15 @@ export function PassagePanel({
                       transition: "transform 0.2s",
                     }}
                   />
-                  <Folder className="h-4 w-4 shrink-0" style={{ color: "#534AB7" }} />
+                  <Folder className="h-4 w-4 shrink-0" style={{ color: "var(--accent)" }} />
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                     Tài liệu {i + 1}
                   </span>
                   <span
                     className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase"
                     style={{
-                      background: isWeb ? "#EEEDFE" : "#EAF3DE",
-                      color: isWeb ? "#3C3489" : "#3B6D11",
+                      background: isWeb ? "var(--accent-soft)" : "#EAF3DE",
+                      color: isWeb ? "var(--accent-hover)" : "#3B6D11",
                     }}
                   >
                     {isWeb ? "Web" : "Pháp điển"}
@@ -226,7 +226,7 @@ export function PassagePanel({
                         <a
                           href={p.url} target="_blank" rel="noreferrer"
                           className="inline-flex max-w-full items-center gap-1 break-all text-xs underline"
-                          style={{ color: "#534AB7" }}
+                          style={{ color: "var(--accent)" }}
                         >
                           {p.url.length > 44 ? `${p.url.slice(0, 44)}…` : p.url}
                         </a>
@@ -243,8 +243,8 @@ export function PassagePanel({
                     <button
                       type="button"
                       className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium"
-                      style={{ border: "1.5px solid #534AB7", color: "#534AB7", background: "transparent" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#EEEDFE")}
+                      style={{ border: "1.5px solid var(--accent)", color: "var(--accent)", background: "transparent" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-soft)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       onClick={() => setFullView(p)}
                     >

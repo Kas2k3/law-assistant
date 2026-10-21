@@ -9,7 +9,6 @@ import {
   MessageCircle, ChevronLeft, ChevronRight, ChevronDown,
   Clock, BookOpen, Folder, Menu, X,
 } from "lucide-react";
-import { useTTS } from "@/hooks/useTTS";
 import { useSTT } from "@/hooks/useSTT";
 import { MessageRow, Avatar, BotBubble } from "@/components/chat/MessageRow";
 import { PassagePanel, PassageFullModal } from "@/components/chat/PassagePanel";
@@ -98,7 +97,6 @@ export default function Home() {
     [chats, activeId]
   );
 
-  const { speak, speakingIdx, loadingIdx } = useTTS();
   const {
     startRecording, stopRecording, cancelRecording, clearBlob,
     recording, audioBlob, duration, supported: sttSupported,
@@ -146,14 +144,6 @@ export default function Home() {
   async function createChat() { await chatActions.createChat(); }
   async function patchChat(id: string, patch: Partial<Chat>) { await chatActions.patchChat(id, patch); }
   async function removeChat(id: string) { await chatActions.removeChat(id); }
-
-  const saveTtsUrl = async (msgIdx: number, url: string) => {
-    if (!activeChat) return;
-    const updated = activeChat.messages.map((m, i) =>
-      i === msgIdx ? { ...m, tts_url: url } : m
-    );
-    await patchChat(activeChat._id, { messages: updated });
-  };
 
   const handleRename = async () => {
     if (!renameChatId || !renameValue.trim()) return;
@@ -254,7 +244,6 @@ export default function Home() {
           role: "assistant",
           content: answer,
           passages: metaPassages,
-          tts_url: null,
         }],
       });
     } catch (err) {
@@ -268,7 +257,7 @@ export default function Home() {
       setRevealedStreamText("");
       setStreamingChatId(null);
       await patchChat(activeChat._id, {
-        messages: [...nextMessages, { role: "assistant", content: errMsg, passages: [], tts_url: null }],
+        messages: [...nextMessages, { role: "assistant", content: errMsg, passages: [] }],
       });
     } finally {
       setSending(false); setPendingStatus(null); setPendingChatId(null);
@@ -381,14 +370,14 @@ export default function Home() {
     return (
       <div
         className="group relative flex items-center gap-1 rounded-lg"
-        style={{ background: activeId === chat._id ? "var(--bg-surface)" : "transparent" }}
+        style={{ background: activeId === chat._id ? "var(--accent-soft)" : "transparent" }}
         onMouseEnter={(e) => { if (activeId !== chat._id) (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)"; }}
         onMouseLeave={(e) => { if (activeId !== chat._id) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       >
         <button
           onClick={() => chatActions.setActiveChat(chat._id)}
-          className="flex-1 truncate rounded-lg px-3 py-2 text-left text-sm"
-          style={{ color: activeId === chat._id ? "var(--text-primary)" : "var(--text-secondary)" }}
+          className="flex-1 truncate rounded-lg px-3 py-2 text-left text-sm font-medium"
+          style={{ color: activeId === chat._id ? "var(--accent-text)" : "var(--text-secondary)" }}
         >
           {chat.title ?? "Cuộc trò chuyện mới"}
         </button>
@@ -435,10 +424,16 @@ export default function Home() {
   const sidebarContent = (
     <>
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            <Image src="/logo.png" alt="VNLaw Logo" width={52} height={52} className="rounded" />
-            <span className="text-base">Chatbot VNLaw</span>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+              style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)" }}>
+              <Image src="/logo.png" alt="VNLaw" width={36} height={36} className="h-full w-full object-cover" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Chatbot VNLaw</div>
+              <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>Trợ lý pháp luật AI</div>
+            </div>
           </div>
           <button
             className="flex h-8 w-8 items-center justify-center rounded-lg md:hidden"
@@ -450,22 +445,27 @@ export default function Home() {
         </div>
 
         <button
-          className="mb-3 w-full rounded-lg px-3 py-2 text-left text-sm transition"
-          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", border: "0.5px solid var(--border)" }}
+          className="mb-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
+          style={{ background: "var(--accent)", color: "var(--text-on-accent)", boxShadow: "var(--shadow-sm)" }}
           onClick={createChat}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-surface)")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
         >
-          <div className="flex items-center gap-2"><Plus size={16} />Đoạn chat mới</div>
+          <Plus size={16} />Đoạn chat mới
         </button>
 
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm kiếm đoạn chat"
-          className="mb-3 w-full rounded-lg px-3 py-2 text-sm outline-none"
-          style={{ background: "var(--bg-input)", border: "0.5px solid var(--border)", color: "var(--text-primary)" }}
-        />
+        <div className="relative mb-4">
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm kiếm đoạn chat"
+            className="w-full rounded-xl py-2 pl-8 pr-3 text-sm outline-none transition"
+            style={{ background: "var(--bg-input)", border: "0.5px solid var(--border)", color: "var(--text-primary)" }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+          />
+        </div>
 
         {error && (
           <div className="mb-3 rounded-lg px-3 py-2 text-xs"
@@ -496,6 +496,14 @@ export default function Home() {
             </div>
             {unpinnedChats.map((chat) => <ChatItem key={chat._id} chat={chat} />)}
           </>
+        )}
+        {filtered.length === 0 && (
+          <div className="mt-6 flex flex-col items-center gap-2 px-4 text-center">
+            <MessageCircle size={22} style={{ color: "var(--text-muted)" }} />
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {search ? "Không tìm thấy đoạn chat nào." : "Chưa có cuộc trò chuyện nào.\nBấm “Đoạn chat mới” để bắt đầu."}
+            </p>
+          </div>
         )}
       </div>
     </>
@@ -587,7 +595,7 @@ export default function Home() {
 
               {/* Topbar */}
               <div className="flex items-center justify-between px-3 py-3 md:px-6 md:py-4"
-                style={{ borderBottom: "0.5px solid var(--border)" }}>
+                style={{ borderBottom: "0.5px solid var(--border)", background: "var(--bg-main)" }}>
                 <div className="flex items-center gap-2 min-w-0">
                   <button
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg md:hidden"
@@ -596,33 +604,36 @@ export default function Home() {
                   >
                     <Menu size={16} />
                   </button>
-                  <div className="truncate text-sm font-semibold md:text-base" style={{ color: "var(--text-primary)" }}>
-                    {activeChat?.title ?? "Hệ thống hỏi đáp pháp luật"}
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold md:text-base" style={{ color: "var(--text-primary)" }}>
+                      {activeChat?.title ?? "Hệ thống hỏi đáp pháp luật"}
+                    </div>
                     {selectedPassages && (
-                      <span className="ml-2 hidden text-xs font-normal italic md:inline" style={{ color: "var(--text-muted)" }}>
-                        — {selectedPassages.length} văn bản liên quan
-                      </span>
+                      <div className="hidden text-xs md:block" style={{ color: "var(--text-muted)" }}>
+                        {selectedPassages.length} văn bản liên quan
+                      </div>
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1 md:gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="hidden h-4 w-4 md:block"
-                    style={{ color: !darkMode ? "#f59e0b" : "var(--text-muted)" }}>
-                    <path fill="currentColor" d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.45-1.79l-1.79 1.79 1.41 1.42 1.8-1.8-1.42-1.41zM12 4V1h-1v3h1zm0 19v-3h-1v3h1zm8-11h3v-1h-3v1zM4 12H1v-1h3v1zm12.24 7.16l1.8 1.79 1.41-1.41-1.79-1.8-1.42 1.42zM4.22 19.54l1.79-1.8-1.41-1.41-1.8 1.79 1.42 1.42zM12 6a6 6 0 100 12 6 6 0 000-12z"/>
-                  </svg>
-                  <button
-                    onClick={() => setDarkMode((p) => !p)}
-                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300"
-                    style={{ background: darkMode ? "#534AB7" : "var(--bg-input)", border: "0.5px solid var(--border)" }}
-                  >
-                    <span className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-all duration-300"
-                      style={{ transform: darkMode ? "translateX(20px)" : "translateX(4px)" }} />
-                  </button>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="hidden h-4 w-4 md:block"
-                    style={{ color: darkMode ? "#6366f1" : "var(--text-muted)" }}>
-                    <path fill="currentColor" d="M21 12.79A9 9 0 0111.21 3c0-.34.02-.67.05-1A9 9 0 1021 12.79z"/>
-                  </svg>
-                </div>
+                <button
+                  onClick={() => setDarkMode((p) => !p)}
+                  title={darkMode ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition"
+                  style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", border: "0.5px solid var(--border)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--bg-surface)")}
+                >
+                  {darkMode ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12.79A9 9 0 0111.21 3c0-.34.02-.67.05-1A9 9 0 1021 12.79z"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="4"/>
+                      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                    </svg>
+                  )}
+                </button>
               </div>
 
               {/* Messages */}
@@ -631,17 +642,12 @@ export default function Home() {
                   <div className="space-y-3 md:space-y-4">
                     {activeChat.messages.map((m, idx) => (
                       <MessageRow
-                        key={idx} m={m} idx={idx} chatId={activeChat._id}
+                        key={idx} m={m}
                         isSelected={selectedMsgIdx === idx}
                         onSelect={(passages) => {
                           if (selectedMsgIdx === idx) { setSelectedPassages(null); setSelectedMsgIdx(null); }
                           else { setSelectedPassages(passages); setSelectedMsgIdx(idx); }
                         }}
-                        onSpeak={speak}
-                        isSpeaking={speakingIdx === idx}
-                        isLoadingTTS={loadingIdx === idx}
-                        onSaveTtsUrl={saveTtsUrl}
-                        isAnyTTSActive={speakingIdx !== null || loadingIdx !== null}
                       />
                     ))}
                     {streamingChatId === activeChat._id && (postStreamReveal || revealedStreamText.length > 0) && (
@@ -667,14 +673,43 @@ export default function Home() {
                     <div ref={bottomRef} />
                   </div>
                 ) : (
-                  <div className="mt-16 text-center text-sm md:mt-24" style={{ color: "var(--text-muted)" }}>
-                    Bắt đầu một đoạn chat mới...
+                  <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+                      style={{ background: "var(--accent-soft)", boxShadow: "var(--shadow-sm)" }}>
+                      <Image src="/logo.png" alt="" width={32} height={32} className="rounded-md object-cover" />
+                    </div>
+                    <h2 className="text-lg font-semibold md:text-xl" style={{ color: "var(--text-primary)" }}>
+                      Xin chào 👋 Bạn cần tìm hiểu điều luật gì?
+                    </h2>
+                    <p className="mt-1.5 max-w-md text-sm" style={{ color: "var(--text-muted)" }}>
+                      Mình tra cứu Pháp Điển Việt Nam và trích dẫn rõ căn cứ cho mỗi câu trả lời.
+                    </p>
+                    <div className="mt-6 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                      {[
+                        "Điều kiện để ly hôn đơn phương là gì?",
+                        "Mức phạt khi vượt đèn đỏ là bao nhiêu?",
+                        "Thủ tục đăng ký kết hôn cần giấy tờ gì?",
+                        "Thời hiệu khởi kiện tranh chấp đất đai?",
+                      ].map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => setInput(q)}
+                          className="rounded-xl px-3.5 py-3 text-left text-sm transition"
+                          style={{ background: "var(--bg-surface)", border: "0.5px solid var(--border)", color: "var(--text-secondary)" }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-surface)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Input form */}
-              <form onSubmit={onSend} className="p-2 md:p-4" style={{ borderTop: "0.5px solid var(--border)" }}>
+              <form onSubmit={onSend} className="p-2 md:px-4 md:pb-4 md:pt-3" style={{ borderTop: "0.5px solid var(--border)", background: "var(--bg-main)" }}>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
@@ -682,15 +717,15 @@ export default function Home() {
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
                       padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500,
-                      border: queryMode === "situation" ? "1.5px solid #534AB7" : "0.5px solid var(--border)",
-                      background: queryMode === "situation" ? "#EEEDFE" : "transparent",
-                      color: queryMode === "situation" ? "#3C3489" : "var(--text-muted)",
+                      border: queryMode === "situation" ? "1.5px solid var(--accent)" : "0.5px solid var(--border)",
+                      background: queryMode === "situation" ? "var(--accent-soft)" : "transparent",
+                      color: queryMode === "situation" ? "var(--accent-text)" : "var(--text-muted)",
                       cursor: "pointer", transition: "all 0.15s",
                     }}
                   >
                     <span style={{
                       width: 7, height: 7, borderRadius: "50%", flexShrink: 0, transition: "background 0.15s",
-                      background: queryMode === "situation" ? "#534AB7" : "var(--border-strong)"
+                      background: queryMode === "situation" ? "var(--accent)" : "var(--border-strong)"
                     }} />
                     {queryMode === "situation" ? "Phân tích tình huống" : "Hỏi đáp thường"}
                   </button>
@@ -701,37 +736,34 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5 md:gap-2">
+                <div className="flex items-center gap-1.5 rounded-2xl p-1.5 md:gap-2"
+                  style={{ background: "var(--bg-surface)", border: "0.5px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
                   {!recording && !audioBlob && (
                     <input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(e as any); } }}
                       placeholder={queryMode === "situation" ? "Mô tả tình huống..." : "Nhập câu hỏi..."}
-                      className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none transition md:px-4 md:py-3"
-                      style={{
-                        background: "var(--bg-input)",
-                        border: queryMode === "situation" ? "0.5px solid #534AB7" : "0.5px solid var(--border)",
-                        color: "var(--text-primary)", minWidth: 0,
-                      }}
+                      className="flex-1 rounded-xl bg-transparent px-2.5 py-2 text-sm outline-none transition md:px-3 md:py-2.5"
+                      style={{ color: "var(--text-primary)", minWidth: 0 }}
                     />
                   )}
                   {recording && (
                     <>
                       <div className="flex flex-1 items-center gap-2 rounded-xl px-2 py-2 md:gap-3 md:px-3"
-                        style={{ background: "var(--bg-input)", border: "1px solid #ef4444", minHeight: 44 }}>
+                        style={{ background: "var(--bg-input)", border: "1px solid var(--rec)", minHeight: 44 }}>
                         <span className="shrink-0 relative flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--rec)" }} />
+                          <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: "var(--rec)" }} />
                         </span>
                         <LiveWaveform recording={recording} />
-                        <span className="shrink-0 text-xs font-mono tabular-nums" style={{ color: "#ef4444" }}>
+                        <span className="shrink-0 text-xs font-mono tabular-nums" style={{ color: "var(--rec)" }}>
                           {String(Math.floor(duration / 60)).padStart(2, "0")}:{String(duration % 60).padStart(2, "0")}
                         </span>
                       </div>
                       <button type="button" onClick={stopRecording} title="Dừng ghi âm"
                         className="shrink-0 flex items-center justify-center rounded-full w-10 h-10 transition"
-                        style={{ background: "#ef4444", color: "#fff" }}>
+                        style={{ background: "var(--rec)", color: "#fff" }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                           <rect x="5" y="5" width="14" height="14" rx="2" />
                         </svg>
@@ -740,14 +772,16 @@ export default function Home() {
                   )}
                   {!recording && audioBlob && (
                     <div className="flex flex-1 items-center gap-2 rounded-xl px-2 py-2 md:px-3"
-                      style={{ background: "var(--bg-input)", border: "0.5px solid #534AB7", minHeight: 44 }}>
+                      style={{ background: "var(--bg-input)", border: "0.5px solid var(--accent)", minHeight: 44 }}>
                       <VoiceMessage audioBlob={audioBlob} onCancel={cancelRecording} />
                     </div>
                   )}
                   {sttSupported && !recording && !audioBlob && (
                     <button type="button" onClick={startRecording} title="Ghi âm"
                       className="shrink-0 flex items-center justify-center rounded-xl transition"
-                      style={{ width: 42, height: 42, background: "var(--bg-surface)", border: "0.5px solid var(--border)", color: "var(--text-muted)" }}>
+                      style={{ width: 38, height: 38, background: "transparent", color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -760,9 +794,11 @@ export default function Home() {
                   <button
                     type={audioBlob ? "button" : "submit"}
                     onClick={audioBlob ? sendVoice : undefined}
-                    disabled={loading || sending}
-                    className="shrink-0 rounded-xl text-sm font-medium transition disabled:opacity-60"
-                    style={{ height: 42, width: 42, background: "#534AB7", color: "var(--text-on-accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    disabled={loading || sending || (!input.trim() && !audioBlob)}
+                    className="shrink-0 rounded-xl text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ height: 38, width: 38, background: "var(--accent)", color: "var(--text-on-accent)", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = "var(--accent-hover)"; }}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
                   >
                     {sending ? (
                       <span className="text-xs">{loadingDots}</span>
@@ -787,7 +823,7 @@ export default function Home() {
                 <div className="fixed inset-0 z-50 flex flex-col md:hidden" style={{ background: "var(--bg-sidebar)" }}>
                   <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "0.5px solid var(--border)" }}>
                     <div className="flex items-center gap-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                      <BookOpen className="h-5 w-5" style={{ color: "#534AB7" }} />Căn cứ pháp lý
+                      <BookOpen className="h-5 w-5" style={{ color: "var(--accent)" }} />Căn cứ pháp lý
                     </div>
                     <button onClick={() => { setSelectedPassages(null); setSelectedMsgIdx(null); }}
                       className="rounded-lg px-2 py-1 text-sm"

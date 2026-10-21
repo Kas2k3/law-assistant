@@ -64,7 +64,7 @@ export function LiveWaveform({ recording }: { recording: boolean }) {
           const x    = i * (barW + gap);
           const y    = (H - barH) / 2;
 
-          gc.fillStyle = `rgba(83,74,183,${0.35 + amp * 0.65})`;
+          gc.fillStyle = `rgba(91,79,214,${0.35 + amp * 0.65})`;
           gc.beginPath();
           gc.roundRect(x, y, barW, barH, barW / 2);
           gc.fill();

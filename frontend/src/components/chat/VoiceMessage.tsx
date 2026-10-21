@@ -122,7 +122,7 @@ export function VoiceMessage({ audioBlob, onCancel }: { audioBlob: Blob; onCance
         type="button" onClick={onCancel} title="Hủy"
         className="shrink-0 flex items-center justify-center rounded-full w-8 h-8 transition"
         style={{ background: "var(--bg-hover)", color: "var(--text-muted)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--rec)")}
         onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -137,9 +137,9 @@ export function VoiceMessage({ audioBlob, onCancel }: { audioBlob: Blob; onCance
       <button
         type="button" onClick={toggle}
         className="shrink-0 flex items-center justify-center rounded-full w-9 h-9 transition"
-        style={{ background: "#534AB7", color: "#fff", boxShadow: "0 2px 8px rgba(83,74,183,0.35)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "#3C3489")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "#534AB7")}
+        style={{ background: "var(--accent)", color: "#fff", boxShadow: "0 2px 8px rgba(91,79,214,0.35)" }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-hover)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent)")}
       >
         {playing ? (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -168,7 +168,7 @@ export function VoiceMessage({ audioBlob, onCancel }: { audioBlob: Blob; onCance
               flex: "1 1 0",
               maxWidth: SLOT_W * 0.65,
               height: `${Math.max(8, Math.round(amp * 100))}%`,
-              background: i < activeBars ? "#534AB7" : "var(--border-strong)",
+              background: i < activeBars ? "var(--accent)" : "var(--border-strong)",
               opacity: i < activeBars ? 1 : 0.5,
               alignSelf: "center",
             }}

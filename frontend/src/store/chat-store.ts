@@ -18,7 +18,6 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   passages?: Passage[];
-  tts_url?: string|null;   // ← thêm
 }
 
 export type Chat = {
