@@ -61,3 +61,6 @@ tmp_dir/
 
 # Cache truy xuất vector_search (sqlitedict) — dữ liệu cục bộ, không commit
 retrieve/.cache/
+
+# File khoá tạm của Microsoft Office khi mở file .docx/.pptx
+~$*
