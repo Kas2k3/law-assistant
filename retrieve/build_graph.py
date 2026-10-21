@@ -6,8 +6,10 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+import os
 import re
 import pymysql
+from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from tqdm import tqdm
 
@@ -17,21 +19,23 @@ from retrieve.tavily_fallback import (
     decompose_query,
     search_tavily_realtime,
 )
- 
+
+load_dotenv()
+
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
- 
+
 MYSQL_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "123456789",
-    "database": "law",
+    "host": os.getenv("MYSQL_HOST", "localhost"),
+    "port": int(os.getenv("MYSQL_PORT", "3306")),
+    "user": os.getenv("MYSQL_USER", "root"),
+    "password": os.getenv("MYSQL_PASSWORD", "123456789"),
+    "database": os.getenv("MYSQL_DATABASE", "law"),
     "charset": "utf8mb4",
 }
- 
-NEO4J_URI      = "bolt://localhost:7687"
-NEO4J_USER     = "neo4j"
-NEO4J_PASSWORD = "password123"
+
+NEO4J_URI      = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER     = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password123")
  
 BATCH_SIZE = 500   # số node insert mỗi lần (tối ưu tốc độ)
  
@@ -190,37 +194,61 @@ def insert_lienquan(driver, conn):
     print(f"✅ LIEN_QUAN: {total} edges (bidirectional)")
  
 # ─── BƯỚC 4: PARSE THAM_CHIEU TỪ NỘI DUNG ────────────────────────────────────
- 
-# Pattern nhận dạng mã điều luật trong nội dung (vd: 1.1.LQ.1, 2.3.NĐ.5.2)
-MAPC_PATTERN = re.compile(r'\b(\d+\.\d+\.[A-ZĐ]+\.\d+(?:\.\d+)*)\b')
- 
+#
+# Lưu ý: mapc thật là chuỗi số dài (vd "0100100000000000100000100000000000000000"),
+# KHÔNG phải dạng "1.1.LQ.1" (đó là mã phân loại nội bộ của Pháp Điển, nằm trong
+# trường `ten`, không bao giờ xuất hiện trong `noidung` làm trích dẫn). Trích dẫn
+# chéo thật trong `noidung` được viết tự nhiên kiểu "Điều 6", "Điều 12" — không kèm
+# tên văn bản, nên phải suy ra "Điều N" đó thuộc văn bản nào bằng cách gom các điều
+# theo văn bản nguồn qua trường `vbqppl` (vd "(Điều 1 Luật số 32/2004/QH11 ...)").
+
+# "(Điều N <mô tả văn bản nguồn>..." — N là số điều gốc trong văn bản nguồn
+LEAD_DIEU_PATTERN = re.compile(r'^\(?\s*[Đđ]iều\s+(\d+[a-z]?)\s+(.+)', re.DOTALL)
+# định danh văn bản nguồn, vd "số 32/2004/QH11", "số 16/2006/NĐ-CP"
+DOC_KEY_PATTERN = re.compile(r'số\s+[\w\./\-]+')
+# trích dẫn "Điều N" xuất hiện trong nội dung điều luật khác
+REF_PATTERN = re.compile(r'[Đđ]iều\s+(\d+[a-z]?)\b')
+
+
 def insert_thamchieu(driver, conn):
     with conn.cursor() as cur:
-        cur.execute("SELECT mapc, noidung FROM pddieu WHERE noidung IS NOT NULL LIMIT 5")
+        cur.execute("SELECT mapc, noidung, vbqppl FROM pddieu")
         rows = cur.fetchall()
 
-    # ── DEBUG: in thử noidung và kết quả regex ──
+    # Gom điều luật theo văn bản nguồn: doc_key -> {số điều gốc: mapc}
+    article_doc = {}  # mapc -> (doc_key, số điều gốc)
+    doc_index = {}
     for row in rows:
-        print(f"\n--- mapc: {row['mapc']} ---")
-        print(f"noidung (200 ký tự đầu): {row['noidung'][:200]}")
-        found = MAPC_PATTERN.findall(row['noidung'] or "")
-        print(f"MAPC_PATTERN tìm được: {found}")
- 
-    # Lấy tập hợp mapc hợp lệ để tránh tạo edge tới node không tồn tại
-    with conn.cursor() as cur:
-        cur.execute("SELECT mapc FROM pddieu")
-        valid_mapcs = {r["mapc"] for r in cur.fetchall()}
- 
+        m = LEAD_DIEU_PATTERN.match((row["vbqppl"] or "").strip())
+        if not m:
+            continue
+        num, rest = m.groups()
+        dm = DOC_KEY_PATTERN.search(rest)
+        if not dm:
+            continue
+        key = dm.group(0)
+        article_doc[row["mapc"]] = (key, num)
+        doc_index.setdefault(key, {})[num] = row["mapc"]
+
+    # Với mỗi điều, "Điều N" trong noidung được suy ra là điều N của CÙNG văn bản
+    # nguồn (bỏ qua trích dẫn chéo sang văn bản khác — không đủ ngữ cảnh để khớp
+    # chắc chắn, tránh tạo edge sai).
     edges = []
     for row in rows:
         src = row["mapc"]
-        found = MAPC_PATTERN.findall(row["noidung"] or "")
-        for tgt in set(found):
-            if tgt != src and tgt in valid_mapcs:
+        info = article_doc.get(src)
+        if not info or not row["noidung"]:
+            continue
+        doc_key, own_num = info
+        for tgt_num in set(REF_PATTERN.findall(row["noidung"])):
+            if tgt_num == own_num:
+                continue
+            tgt = doc_index.get(doc_key, {}).get(tgt_num)
+            if tgt and tgt != src:
                 edges.append({"src": src, "tgt": tgt})
- 
+
     total = len(edges)
-    print(f"  Parsed {total} THAM_CHIEU edges từ noidung...")
+    print(f"  Parsed {total} THAM_CHIEU edges (khớp 'Điều N' trong cùng văn bản nguồn)...")
  
     for i in tqdm(range(0, total, BATCH_SIZE), desc="THAM_CHIEU"):
         batch = edges[i : i + BATCH_SIZE]
@@ -234,8 +262,75 @@ def insert_thamchieu(driver, conn):
  
     print(f"✅ THAM_CHIEU: {total} edges")
  
+# ─── CACHE (sqlitedict) — tránh gọi lại OpenAI embedding cho query lặp lại ─────
+
+_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".cache")
+_VECTOR_CACHE_PATH = os.path.join(_CACHE_DIR, "vector_search_cache.sqlite")
+_CACHE_ENABLED = os.getenv("RAG_CACHE_ENABLED", "1").strip().lower() in ("1", "true", "yes")
+
+
+def _vector_cache_get(key: str):
+    if not _CACHE_ENABLED:
+        return None
+    try:
+        import sqlitedict
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        with sqlitedict.SqliteDict(_VECTOR_CACHE_PATH) as db:
+            return db.get(key)
+    except Exception:
+        return None
+
+
+def _vector_cache_set(key: str, value) -> None:
+    if not _CACHE_ENABLED:
+        return
+    try:
+        import sqlitedict
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        with sqlitedict.SqliteDict(_VECTOR_CACHE_PATH, autocommit=True) as db:
+            db[key] = value
+    except Exception:
+        pass
+
+
+# ─── HYBRID RERANK HELPERS (BM25 + embedding cục bộ, không gọi OpenAI) ─────────
+
+_TOKEN_RE = re.compile(r"\w+")
+
+
+def _bm25_scores_normalized(query: str, texts: list[str]) -> list[float]:
+    """Điểm BM25 (tìm kiếm theo từ khoá) cho từng text so với query, chuẩn hoá về [0,1]."""
+    from rank_bm25 import BM25Okapi
+
+    tokenized_corpus = [_TOKEN_RE.findall(t.lower()) for t in texts]
+    query_tokens = _TOKEN_RE.findall(query.lower())
+    if not any(tokenized_corpus) or not query_tokens:
+        return [0.0] * len(texts)
+
+    bm25 = BM25Okapi(tokenized_corpus)
+    raw = list(bm25.get_scores(query_tokens))
+    lo, hi = min(raw), max(raw)
+    if hi - lo < 1e-9:
+        return [0.0] * len(raw)
+    return [(v - lo) / (hi - lo) for v in raw]
+
+
+def _semantic_scores(query: str, texts: list[str]) -> list[float]:
+    """Độ tương đồng ngữ nghĩa (cosine) giữa query và từng text, dùng embedding cục bộ."""
+    try:
+        from services.local_embeddings import get_local_embedder
+        from sentence_transformers import util as st_util
+
+        model = get_local_embedder()
+        query_emb = model.encode(query, convert_to_tensor=True)
+        text_emb = model.encode(texts, convert_to_tensor=True)
+        return st_util.cos_sim(query_emb, text_emb)[0].tolist()
+    except Exception:
+        return [0.0] * len(texts)
+
+
 # ─── GRAPH RAG RETRIEVER ───────────────────────────────────────────────────────
- 
+
 class GraphRAGRetriever:
     """
     Kết hợp Milvus (vector search) + Neo4j (graph traversal).
@@ -263,7 +358,19 @@ class GraphRAGRetriever:
     # ── Stage 1: Milvus vector search ────────────────────────────────────────
  
     def _vector_search(self, query: str, top_k: int) -> list[str]:
-        """Trả về list mapc của các Dieu gần nhất về ngữ nghĩa."""
+        """Trả về list mapc của các Dieu gần nhất về ngữ nghĩa.
+        Kết quả được cache theo (query, top_k) để tránh gọi lại OpenAI embedding
+        khi cùng một câu hỏi lặp lại (vd: khi chạy đánh giá hoặc người dùng hỏi lại)."""
+        cache_key = f"{query.strip().lower()}::{top_k}"
+        cached = _vector_cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        mapcs = self._vector_search_uncached(query, top_k)
+        _vector_cache_set(cache_key, mapcs)
+        return mapcs
+
+    def _vector_search_uncached(self, query: str, top_k: int) -> list[str]:
         try:
             vec = self._embed(query)
             results = self.collection.search(
@@ -372,22 +479,37 @@ class GraphRAGRetriever:
                 })
             return rows
  
-    # ── Stage 3: Simple rerank bằng keyword overlap ───────────────────────────
- 
-    def _rerank(self, candidates: list[dict], query: str, top_k: int) -> list[dict]:
-        query_tokens = set(query.lower().split())
+    # ── Stage 3: Hybrid rerank — BM25 (từ khoá) + embedding cục bộ (ngữ nghĩa) ──
+    # Cả hai đều tính tại chỗ, không gọi OpenAI/LLM nào — không phát sinh chi phí.
+
+    def _rerank(
+        self,
+        candidates: list[dict],
+        query: str,
+        top_k: int,
+        bm25_weight: float = 0.3,
+        semantic_weight: float = 0.3,
+    ) -> list[dict]:
         seen = set()
         deduped = []
-
         for c in candidates:
             key = c.get("mapc") or c.get("passage", "")[:80]
             if key in seen:
                 continue
             seen.add(key)
-            text    = ((c.get("ten") or "") + " " + (c.get("noidung") or "")).lower()
-            overlap = sum(1 for t in query_tokens if t in text)
-            c["score"] = c["base_score"] + overlap * 0.05
             deduped.append(c)
+
+        if not deduped:
+            return []
+
+        texts = [((c.get("ten") or "") + " " + (c.get("noidung") or "")) for c in deduped]
+        bm25_norm = _bm25_scores_normalized(query, texts)
+        semantic_scores = _semantic_scores(query, texts)
+
+        for c, bm25_s, sem_s in zip(deduped, bm25_norm, semantic_scores):
+            c["bm25_score"] = bm25_s
+            c["semantic_score"] = sem_s
+            c["score"] = c["base_score"] + bm25_weight * bm25_s + semantic_weight * max(0.0, sem_s)
 
         deduped.sort(key=lambda x: x["score"], reverse=True)
         return deduped[:top_k]
@@ -497,7 +619,7 @@ def main():
         print("\n" + "=" * 60)
         print("🎉 DONE — Graph đã được build thành công!")
         print("   Neo4j Browser: http://localhost:7474")
-        print("   Login: neo4j / password123")
+        print(f"   Login: {NEO4J_USER} / (xem NEO4J_PASSWORD trong .env)")
         print("=" * 60)
  
     finally:

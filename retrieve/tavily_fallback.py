@@ -178,7 +178,16 @@ def search_tavily(query: str, top_k: int = MAX_WEB_RESULTS) -> list[dict]:
 from openai import OpenAI
 import json as _json
 
-_openai_client = OpenAI()
+_openai_client = None
+
+
+def _get_openai_client() -> OpenAI:
+    """Khởi tạo lazy — tránh crash khi import module này mà chưa có OPENAI_API_KEY
+    (vd khi chạy build_graph.py, vốn không cần gọi OpenAI)."""
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = OpenAI()
+    return _openai_client
 
 REALTIME_KEYWORDS = [
     "hôm nay", "hiện tại", "hiện nay", "bây giờ", "mới nhất",
@@ -206,7 +215,7 @@ def decompose_query(query: str) -> dict:
         }
 
     try:
-        resp = _openai_client.chat.completions.create(
+        resp = _get_openai_client().chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": (

@@ -1,7 +1,9 @@
 from typing import List, Dict, Any
+import os
 import re
 import pandas as pd
 
+from dotenv import load_dotenv
 from pymilvus import (
     connections,
     Collection,
@@ -9,23 +11,57 @@ from pymilvus import (
 from openai import OpenAI
 from sqlalchemy import create_engine
 
-# from hybrid_search import HybridRetriever 
+# from hybrid_search import HybridRetriever
+
+load_dotenv()
+
+MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "123456789")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "law")
+
+# OpenAI client (dùng cho cả embedding & rerank LLM) — lazy để import module này
+# (vd từ backend/rag_api.py) không crash khi chưa có OPENAI_API_KEY.
+class _LazyOpenAI:
+    _real = None
+
+    def __getattr__(self, name):
+        if _LazyOpenAI._real is None:
+            _LazyOpenAI._real = OpenAI()
+        return getattr(_LazyOpenAI._real, name)
 
 
-# OpenAI client (dùng cho cả embedding & rerank LLM)
-client = OpenAI()
+client = _LazyOpenAI()
 
 # MySQL engine (dùng cho HybridRetriever nếu cần)
-engine = create_engine("mysql+mysqlconnector://root:123456789@localhost:3306/law")
+engine = create_engine(
+    f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+)
 
 # Milvus
 connections.connect("default", host="localhost", port="19530")
 print("Connected to Milvus")
 
 collection_name = "phapdien_simple_tendieu"
-collection = Collection(collection_name)
-collection.load()
-print("Loaded collection:", collection_name)
+
+
+class _LazyCollection:
+    """Trì hoãn mở collection tới lần dùng đầu tiên — cho phép import module này
+    (vd backend/rag_api.py lúc khởi động) kể cả khi chưa seed dữ liệu vào Milvus.
+    Chỉ báo lỗi rõ ràng khi thực sự có người gọi search/query, thay vì sập cả server."""
+    _real = None
+
+    def __getattr__(self, name):
+        if _LazyCollection._real is None:
+            col = Collection(collection_name)
+            col.load()
+            print("Loaded collection:", collection_name)
+            _LazyCollection._real = col
+        return getattr(_LazyCollection._real, name)
+
+
+collection = _LazyCollection()
 
 
 class TwoStageRetriever:

@@ -6,11 +6,26 @@ from pymilvus import (
 from openai import OpenAI
 import argparse
 import json
+import os
 import pandas as pd  # vẫn dùng cho error_rows -> csv
 import pymysql
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "123456789")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "law")
+
 # Milvus giới hạn độ dài chuỗi JSON cho mỗi field metadata
 MAX_METADATA_JSON_BYTES = 64_000
+
+# text-embedding-3-small giới hạn 8191 token/input; cắt bớt text dùng để embed
+# (không phải noidung lưu trong metadata) để tránh lỗi cả batch vì 1 điều quá dài
+MAX_EMBED_TEXT_CHARS = 12_000
 
 # ----------------- OpenAI EMBEDDING -----------------
 client = OpenAI()
@@ -110,11 +125,11 @@ def setup_collection(*, resume: bool) -> tuple[Collection, int]:
 
 def load_data_from_mysql():
     conn = pymysql.connect(
-        host="localhost",
-        port=3306,
-        user="root",
-        password="123456789",
-        database="law",
+        host=MYSQL_HOST,
+        port=MYSQL_PORT,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        database=MYSQL_DATABASE,
         charset="utf8mb4"
     )
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -174,7 +189,8 @@ def build_block_text(rec: dict) -> str:
         parts.append(body)
 
     # Ghép tất cả lại thành 1 đoạn text
-    return "\n\n".join(parts)
+    text = "\n\n".join(parts)
+    return text[:MAX_EMBED_TEXT_CHARS]
 
 # ----------------- INSERT BATCH -----------------
 def insert_batch(records, global_offset, error_rows):
@@ -187,9 +203,8 @@ def insert_batch(records, global_offset, error_rows):
       - noidung: list[str]
     """
     try:
-        # ❶ Dùng block (tendemuc + tenchuong + tendieu + noidung) để embed
-        # texts = [build_block_text(rec) for rec in records]
-        texts = [(rec.get("tendieu") or "").strip() for rec in records]
+        # Dùng block (tenchude + tendemuc + tenchuong + tendieu + noidung) để embed
+        texts = [build_block_text(rec) for rec in records]
 
 
         print(f"Embedding {len(texts)} documents…")
@@ -215,8 +230,7 @@ def insert_batch(records, global_offset, error_rows):
         vectors = []
 
         for i, rec in enumerate(records):
-            # text = build_block_text(rec)
-            text = (rec.get("tendieu") or "").strip()
+            text = build_block_text(rec)
             this_id = global_offset + i + 1
 
             try:

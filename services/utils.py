@@ -1,7 +1,6 @@
 # utils.py
 import os, re, unicodedata
 from dotenv import load_dotenv
-from elasticsearch import Elasticsearch
 from datetime import datetime
 from openai import OpenAI
 import asyncio
@@ -11,16 +10,21 @@ from typing import Iterator
 
 load_dotenv()
 
-ES_ENDPOINT = os.getenv("ES_ENDPOINT")
-ES_API_KEY  = os.getenv("ES_API_KEY")
 OPENAI_MODEL  = os.getenv("OPENAI_MODEL")
 
-client = OpenAI()
 
-def get_es() -> Elasticsearch:
-    if not ES_ENDPOINT or not ES_API_KEY:
-        raise RuntimeError("Thiếu ES_ENDPOINT / ES_API_KEY trong .env")
-    return Elasticsearch(ES_ENDPOINT, api_key=ES_API_KEY)
+class _LazyOpenAI:
+    """Trì hoãn khởi tạo OpenAI() tới lần gọi đầu tiên — tránh crash lúc import
+    module (vd khi chạy backend/rag_api.py) nếu OPENAI_API_KEY chưa được set."""
+    _real = None
+
+    def __getattr__(self, name):
+        if _LazyOpenAI._real is None:
+            _LazyOpenAI._real = OpenAI()
+        return getattr(_LazyOpenAI._real, name)
+
+
+client = _LazyOpenAI()
 
 def join_noidung(noidung) -> str:
     if isinstance(noidung, list):

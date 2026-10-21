@@ -643,19 +643,167 @@ def merge_tool_result_into_passages(
     merge_passage_hits(hits, bucket, max_extend=max_extend)
 
 
-def run_agentic_rag_sync(
+SYNTHESIS_PROMPT = "Hãy tổng hợp câu trả lời dựa trên thông tin đã thu thập (tiếng Việt)."
+
+GROUNDING_SIM_THRESHOLD = float(os.getenv("AGENT_GROUNDING_THRESHOLD", "0.35"))
+
+_SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[.!?…])\s+|\n+")
+
+
+def check_answer_grounding(answer: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
+    """Kiểm tra độ trung thực (faithfulness/grounding): mỗi câu trong câu trả lời có thực
+    sự bám sát nội dung đã truy xuất hay không — so sánh bằng embedding cục bộ (không tốn
+    phí gọi LLM/OpenAI), không phải chấm điểm LLM-as-judge.
+
+    Trả về {"grounding_score": 0..1, "flagged_sentences": [câu nghi ngờ bịa]}.
+    """
+    sentences = [s.strip() for s in _SENTENCE_SPLIT_PATTERN.split(answer or "") if len(s.strip()) > 8]
+    context_texts = [str(p.get("noidung") or p.get("passage") or "") for p in passages]
+    context_texts = [t for t in context_texts if t.strip()]
+
+    if not sentences or not context_texts:
+        return {"grounding_score": None, "flagged_sentences": []}
+
+    try:
+        from services.local_embeddings import get_local_embedder
+        model = get_local_embedder()
+        from sentence_transformers import util as st_util
+
+        sent_emb = model.encode(sentences, convert_to_tensor=True)
+        ctx_emb = model.encode(context_texts, convert_to_tensor=True)
+        sims = st_util.cos_sim(sent_emb, ctx_emb)  # [n_sentences, n_contexts]
+        best_per_sentence = sims.max(dim=1).values.tolist()
+    except Exception:
+        return {"grounding_score": None, "flagged_sentences": []}
+
+    flagged = [s for s, score in zip(sentences, best_per_sentence) if score < GROUNDING_SIM_THRESHOLD]
+    grounding_score = sum(best_per_sentence) / len(best_per_sentence)
+    return {"grounding_score": round(grounding_score, 4), "flagged_sentences": flagged}
+
+
+# ── SSE / response shaping (dùng chung bởi run_agentic_rag, trước nằm trùng lặp
+#    trong rag_api.py ở cả /rag/chat và /rag/stream) ────────────────────────────
+def _web_sources_markdown(web_sources: list[dict[str, str]]) -> str:
+    if not web_sources:
+        return ""
+    lines = ["\n\n---\n**Nguồn tham khảo từ web:**"]
+    for src in web_sources:
+        icon = "✅" if src.get("level") == "high" else "⚠️"
+        lines.append(
+            f"{icon} {src.get('label', '[Web]')} [{src.get('title', '')}]({src.get('url', '')})"
+        )
+    return "\n".join(lines)
+
+
+def _build_passages(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    passages = []
+    for hit in results:
+        passages.append({
+            "mapc":      hit.get("mapc", ""),
+            "ten":       hit.get("ten", ""),
+            "tenchuong": hit.get("tenchuong", ""),
+            "tendemuc":  hit.get("tendemuc", ""),
+            "tenchude":  hit.get("tenchude", ""),
+            "noidung":   str(hit.get("noidung") or hit.get("passage", "")),
+            "score":     round(float(hit.get("score", 0)), 4),
+            "source":    hit.get("source", "phapdien"),
+            "url":       hit.get("url", ""),
+            "trust_level": hit.get("trust_level", "medium"),
+            "source_label": hit.get("source_label", "[Web]"),
+        })
+    return passages
+
+
+def _web_sources_from_passages(passages: list[dict[str, Any]]) -> list[dict[str, str]]:
+    web_sources: list[dict[str, str]] = []
+    for p in passages:
+        if p.get("source") in ("web", "web_realtime") and p.get("url"):
+            web_sources.append({
+                "title": str(p.get("ten", "")),
+                "url":   str(p.get("url", "")),
+                "level": str(p.get("trust_level", "medium")),
+                "label": str(p.get("source_label", "[Web]")),
+            })
+    return web_sources
+
+
+def _dedup_results(raw_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen_keys: set = set()
+    web_r, pd_r = [], []
+    for hit in raw_results:
+        key = hit.get("mapc") or hit.get("url") or hit.get("passage", "")[:100]
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        if hit.get("source") in ("web", "web_realtime"):
+            web_r.append(hit)
+        else:
+            pd_r.append(hit)
+    return (web_r + pd_r)[:20]
+
+
+def _chunk_stream_text(text: str, max_chars: int = 32):
+    """Tách văn bản thành nhiều mẩu nhỏ (theo từ / dòng) để client hiển thị mượt."""
+    rest = text or ""
+    if not rest:
+        return
+    while rest:
+        if rest[0] == "\n":
+            n = 1
+            while n < len(rest) and rest[n] == "\n":
+                n += 1
+            yield rest[:n]
+            rest = rest[n:]
+            continue
+        m = re.match(r"(\S+)(\s*)", rest)
+        if m:
+            piece = m.group(0)
+            if len(piece) > max_chars:
+                yield piece[:max_chars]
+                rest = rest[max_chars:]
+            else:
+                yield piece
+                rest = rest[len(piece):]
+        else:
+            yield rest[0]
+            rest = rest[1:]
+
+
+def _build_meta_event(
+    bucket: list[dict[str, Any]], *, normalized_query: str, iterations: int
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    passages = _build_passages(_dedup_results(bucket))
+    web_sources = _web_sources_from_passages(passages)
+    event = {
+        "type": "meta",
+        "action": "proceed",
+        "normalized_query": normalized_query,
+        "passages": passages,
+        "sources": web_sources,
+        "iterations": iterations,
+        "agentic": True,
+    }
+    return event, web_sources
+
+
+def run_agentic_rag(
     *,
     openai_client: Any,
     retriever: Any,
     neo4j_driver: Any,
     user_prompt: str,
     history: list[dict[str, str]],
+    normalized_query: str,
     situation_mode: bool = False,
     max_iterations: int = 6,
     rerank_query: str | None = None,
-) -> dict[str, Any]:
+):
     """
-    Vòng lặp tool-calling (không stream). Trả về answer, raw passage hits, iterations.
+    Vòng lặp tool-calling, dùng chung cho /rag/chat (gom hết) và /rag/stream (pass-through SSE).
+    Yield các event dict theo đúng schema SSE đã có từ trước:
+      {"type": "status", "text", "iteration", "max"}
+      {"type": "meta", "action", "normalized_query", "passages", "sources", "iterations", "agentic"}
+      {"type": "token", "text"}
     """
     rerank_ctx = (rerank_query if rerank_query is not None else user_prompt) or ""
     model = agent_chat_model()
@@ -679,16 +827,43 @@ def run_agentic_rag_sync(
         messages.append(assistant_message_to_dict(msg))
 
         if not msg.tool_calls:
-            text = (msg.content or "").strip()
-            if text:
-                return {
-                    "answer": text,
-                    "passage_hits": bucket,
-                    "iterations": iteration + 1,
-                }
-            break
+            meta_event, web_sources = _build_meta_event(
+                bucket, normalized_query=normalized_query, iterations=iteration + 1
+            )
+            yield meta_event
+
+            full_answer_parts: list[str] = []
+            content = (msg.content or "").strip()
+            if content:
+                for part in _chunk_stream_text(content):
+                    full_answer_parts.append(part)
+                    yield {"type": "token", "text": part}
+            else:
+                stream = openai_client.chat.completions.create(
+                    model=model,
+                    messages=messages + [{"role": "user", "content": SYNTHESIS_PROMPT}],
+                    temperature=0.2,
+                    max_tokens=1200,
+                    stream=True,
+                )
+                for chunk in stream:
+                    delta = chunk.choices[0].delta.content
+                    if delta:
+                        full_answer_parts.append(delta)
+                        yield {"type": "token", "text": delta}
+
+            if web_sources:
+                yield {"type": "token", "text": _web_sources_markdown(web_sources)}
+            yield {"type": "grounding", **check_answer_grounding("".join(full_answer_parts), meta_event["passages"])}
+            return
 
         for tc in msg.tool_calls:
+            yield {
+                "type": "status",
+                "text": f"🔍 Đang gọi {tc.function.name}...",
+                "iteration": iteration + 1,
+                "max": max_iterations,
+            }
             try:
                 args = json.loads(tc.function.arguments or "{}")
             except json.JSONDecodeError:
@@ -709,18 +884,26 @@ def run_agentic_rag_sync(
                 "content": tool_content,
             })
 
-    final = openai_client.chat.completions.create(
+    # Hết max_iterations mà model vẫn muốn gọi tool tiếp — ép tổng hợp câu trả lời.
+    meta_event, web_sources = _build_meta_event(
+        bucket, normalized_query=normalized_query, iterations=max_iterations
+    )
+    yield meta_event
+
+    full_answer_parts: list[str] = []
+    stream = openai_client.chat.completions.create(
         model=model,
-        messages=messages
-        + [{
-            "role": "user",
-            "content": "Hãy tổng hợp câu trả lời dựa trên thông tin đã thu thập (tiếng Việt).",
-        }],
+        messages=messages + [{"role": "user", "content": SYNTHESIS_PROMPT}],
         temperature=0.2,
         max_tokens=1200,
+        stream=True,
     )
-    return {
-        "answer": (final.choices[0].message.content or "").strip(),
-        "passage_hits": bucket,
-        "iterations": max_iterations,
-    }
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            full_answer_parts.append(delta)
+            yield {"type": "token", "text": delta}
+
+    if web_sources:
+        yield {"type": "token", "text": _web_sources_markdown(web_sources)}
+    yield {"type": "grounding", **check_answer_grounding("".join(full_answer_parts), meta_event["passages"])}

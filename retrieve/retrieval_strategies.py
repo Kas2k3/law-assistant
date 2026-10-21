@@ -9,23 +9,34 @@ Bao gồm 4 chiến lược:
 4. hybrid_rerank: Vector search + LLM reranking
 """
 
+import os
 import re
 import json
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 
+from dotenv import load_dotenv
 from pymilvus import connections, Collection
 from sqlalchemy import create_engine
 from openai import OpenAI
 
+load_dotenv()
+
+MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "123456789")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "law")
 
 # ==================== CONFIGURATION ====================
 # Kết nối OpenAI
 client = OpenAI()
 
 # Kết nối MySQL
-engine = create_engine("mysql+mysqlconnector://root:123456789@localhost:3306/law")
+engine = create_engine(
+    f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+)
 
 # Kết nối Milvus
 connections.connect("default", host="localhost", port="19530")
