@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies needed by tests/
+        # Chỉ cài đúng những gì import-time của retrieve/build_graph.py và
+        # services/agentic_rag.py cần — không cài toàn bộ requirements.txt (pymilvus,
+        # faiss, langchain...) để CI chạy nhanh. torch dùng bản CPU cho nhẹ.
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install pytest rank_bm25 sentence-transformers python-dotenv pymysql neo4j tqdm tavily-python
+
+      - name: Run unit tests (pure logic, không cần MySQL/Milvus/Neo4j/OpenAI)
+        run: pytest tests/ -v
