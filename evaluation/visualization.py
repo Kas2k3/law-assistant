@@ -17,22 +17,176 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from metric_docs import FULL_GUIDE_MARKDOWN, METRIC_HELP
+from live_log import read_live_log
+
 st.set_page_config(page_title="Dashboard đánh giá RAG", layout="wide", page_icon="📊")
 
 RESULTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
+LIVE_PROGRESS_PATH = os.path.join(RESULTS_DIR, "_live_progress.json")
 
 st.title("📊 Dashboard đánh giá hệ thống RAG")
+
+with st.expander("📖 Giải thích các chỉ số đánh giá & Top-K", expanded=False):
+    st.markdown(FULL_GUIDE_MARKDOWN)
+
 st.markdown("---")
 
+
+@st.fragment(run_every=3)
+def _live_banner():
+    """Tự refresh mỗi 3s trong lúc evaluate() đang chạy — không cần tải lại cả trang."""
+    if not os.path.exists(LIVE_PROGRESS_PATH):
+        return False
+    try:
+        with open(LIVE_PROGRESS_PATH, "r", encoding="utf-8") as f:
+            live = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False  # đang ghi dở (os.replace là atomic nhưng phòng trường hợp đọc trúng lúc file bị xoá)
+
+    status = live.get("status")
+    completed, total = live.get("completed", 0), live.get("total", 0) or 1
+    if status == "running":
+        st.warning(f"🔴 **ĐANG CHẠY ĐÁNH GIÁ** — `{live.get('data_file')}` — {completed}/{total} câu hỏi")
+        st.progress(completed / total)
+    elif status == "error":
+        st.error(f"⚠️ Lần chạy gần nhất bị dừng giữa chừng ({completed}/{total} câu hỏi) — xem terminal để biết lỗi.")
+    return status == "running"
+
+
+is_live_running = _live_banner()
+
+# ════════════════════════════════════════════════════════════════════════════
+# LỊCH SỬ CÂU HỎI THỰC TẾ — ghi tự động từ /rag/chat + /rag/stream, không cần
+# chạy run_evaluation.py hay upload file JSON nào (xem evaluation/live_log.py).
+# ════════════════════════════════════════════════════════════════════════════
+st.header("💬 Lịch sử câu hỏi thực tế (live)")
+st.caption(
+    "Mọi câu hỏi gửi qua chat UI được ghi tự động ở đây — không cần chạy "
+    "`run_evaluation.py` hay upload file. **Không tính được** Precision/Recall/"
+    "ROUGE-L/BLEU (các chỉ số đó bắt buộc phải so với `gold_docs`/`gold_response` "
+    "— câu hỏi tự do không có đáp án mẫu) — chỉ hiện chỉ số không cần đáp án mẫu: "
+    "độ trung thực (grounding), số passage retrieve được, thời gian xử lý."
+)
+
+
+@st.fragment(run_every=5)
+def _live_chat_section():
+    rows = read_live_log()
+    if not rows:
+        st.info("Chưa có câu hỏi nào được hỏi qua chat UI — hỏi thử 1 câu trên giao diện rồi quay lại đây.")
+        return
+
+    df = pd.DataFrame(rows)
+    df["time"] = pd.to_datetime(df["timestamp"], unit="s")
+    df = df.sort_values("time", ascending=False).reset_index(drop=True)
+
+    proceed_df = df[df["action"] == "proceed"]
+
+    def _avg(colname: str):
+        if proceed_df.empty or colname not in proceed_df.columns:
+            return None
+        v = proceed_df[colname].dropna().mean()
+        return float(v) if pd.notna(v) else None
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1.metric("Tổng câu hỏi", len(df))
+    c2.metric("Số câu xử lý RAG", len(proceed_df))
+    avg_g = _avg("grounding_score")
+    c3.metric("Grounding TB", f"{avg_g:.3f}" if avg_g is not None else "—", help=METRIC_HELP["grounding"])
+    avg_ar = _avg("answer_relevance")
+    c4.metric("Answer Relevance TB", f"{avg_ar:.3f}" if avg_ar is not None else "—",
+              help=METRIC_HELP["answer_relevance"])
+    avg_cr = _avg("context_relevance")
+    c5.metric("Context Relevance TB", f"{avg_cr:.3f}" if avg_cr is not None else "—",
+              help=METRIC_HELP["context_relevance"])
+    avg_t = df["elapsed_ms"].dropna().mean() if "elapsed_ms" in df.columns else None
+    c6.metric("Xử lý TB", f"{avg_t / 1000:.1f}s" if avg_t is not None and pd.notna(avg_t) else "—")
+
+    low_threshold = st.slider(
+        "Ngưỡng cảnh báo độ trung thực thấp", 0.0, 1.0, 0.35, 0.05, key="live_threshold",
+    )
+
+    def _round_or_none(v):
+        return round(v, 3) if v is not None and pd.notna(v) else None
+
+    display_rows = []
+    for _, r in df.iterrows():
+        gs = r.get("grounding_score")
+        has_gs = gs is not None and pd.notna(gs)
+        et = r.get("elapsed_ms")
+        display_rows.append({
+            "Thời gian": r["time"].strftime("%Y-%m-%d %H:%M:%S"),
+            "Câu hỏi": r["query"],
+            "Hành động": r["action"],
+            "Số passage": r.get("num_passages", 0),
+            "Grounding": _round_or_none(gs),
+            "Answer Rel.": _round_or_none(r.get("answer_relevance")),
+            "Context Rel.": _round_or_none(r.get("context_relevance")),
+            "⚠️ Nghi bịa": "⚠️" if (has_gs and gs < low_threshold) else "",
+            "Xử lý (s)": round(et / 1000, 1) if et is not None and pd.notna(et) else None,
+        })
+    st.dataframe(pd.DataFrame(display_rows), use_container_width=True, hide_index=True)
+
+    with st.expander("🔍 Xem chi tiết 1 câu hỏi"):
+        idx = st.selectbox(
+            "Chọn câu hỏi:", range(len(df)),
+            format_func=lambda i: f"{df.iloc[i]['time'].strftime('%H:%M:%S')} — {df.iloc[i]['query'][:60]}",
+            key="live_detail_picker",
+        )
+        row = df.iloc[idx]
+        st.markdown(f"**Câu hỏi:** {row['query']}")
+        if row.get("normalized_query"):
+            st.markdown(f"**Câu hỏi đã rewrite:** {row['normalized_query']}")
+        st.markdown(f"**Câu trả lời:** {row['answer']}")
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Grounding", _round_or_none(row.get("grounding_score")) or "—", help=METRIC_HELP["grounding"])
+        m2.metric("Answer Relevance", _round_or_none(row.get("answer_relevance")) or "—",
+                  help=METRIC_HELP["answer_relevance"])
+        m3.metric("Context Relevance", _round_or_none(row.get("context_relevance")) or "—",
+                  help=METRIC_HELP["context_relevance"])
+
+        mapcs = row.get("retrieved_mapcs") or []
+        if len(mapcs):
+            st.markdown(f"**Điều luật đã dùng ({len(mapcs)}):** {', '.join(mapcs[:10])}")
+        flagged = row.get("flagged_sentences") or []
+        if len(flagged):
+            st.warning("Câu nghi bịa: " + " | ".join(flagged))
+
+    st.download_button(
+        "📥 Export lịch sử (CSV)",
+        pd.DataFrame(display_rows).to_csv(index=False),
+        file_name="live_chat_log.csv",
+        mime="text/csv",
+    )
+
+
+_live_chat_section()
+
+st.markdown("---")
+
+# ════════════════════════════════════════════════════════════════════════════
+# SO SÁNH VỚI BỘ TEST CHUẨN (cần gold_docs/gold_response) — từ run_evaluation.py
+# ════════════════════════════════════════════════════════════════════════════
+st.header("📂 So sánh với bộ test chuẩn (cần gold data)")
+
 # ── Chọn nguồn file: có sẵn trong evaluation/results/ hoặc tự upload ───────────
-existing_files = sorted(glob.glob(os.path.join(RESULTS_DIR, "*.json")), key=os.path.getmtime, reverse=True)
+existing_files = sorted(
+    (f for f in glob.glob(os.path.join(RESULTS_DIR, "*.json")) if os.path.basename(f) != "_live_progress.json"),
+    key=os.path.getmtime, reverse=True,
+)
 existing_names = [os.path.basename(f) for f in existing_files]
+
+live_option = "🔴 Kết quả đang chạy realtime (_live_progress.json)"
+options = ([live_option] if os.path.exists(LIVE_PROGRESS_PATH) else []) + existing_names
 
 col_src1, col_src2 = st.columns([2, 1])
 with col_src1:
     picked = st.selectbox(
         "📁 Chọn file kết quả có sẵn trong evaluation/results/",
-        ["(không chọn)"] + existing_names,
+        ["(không chọn)"] + options,
+        index=1 if (is_live_running and options and options[0] == live_option) else 0,
     )
 with col_src2:
     uploaded_file = st.file_uploader("...hoặc tải file JSON khác", type=["json"])
@@ -40,6 +194,14 @@ with col_src2:
 all_data = None
 if uploaded_file is not None:
     all_data = json.load(uploaded_file)
+elif picked == live_option:
+    with open(LIVE_PROGRESS_PATH, "r", encoding="utf-8") as f:
+        live = json.load(f)
+    if live.get("summary"):
+        all_data = {"summary": live["summary"], "detailed": live["detailed"]}
+    else:
+        st.info("Chưa có câu hỏi nào hoàn tất — đợi vài giây rồi xem lại.")
+        st.stop()
 elif picked != "(không chọn)":
     with open(os.path.join(RESULTS_DIR, picked), "r", encoding="utf-8") as f:
         all_data = json.load(f)
@@ -78,15 +240,27 @@ if IS_NEW_FORMAT:
 
     st.caption("Đo trực tiếp trên `run_agentic_rag()` — đúng pipeline đang chạy trong backend/rag_api.py")
 
+    all_retrieval_zero = all(
+        v == 0 for k_vals in summary["retrieval_metrics"].values() for v in k_vals.values()
+    )
+    if all_retrieval_zero and summary["num_queries"] > 0:
+        st.warning(
+            "⚠️ **Retrieval metrics (Precision/Recall/Hit/MRR/NDCG) đều bằng 0 ở mọi k** — "
+            "nhiều khả năng do `gold_docs` trong `data.json` bị lệch sau khi crawl lại dữ liệu "
+            "(xem mục 📖 Giải thích ở đầu trang, phần \"Hạn chế đã biết\"). "
+            "**Nên đọc ROUGE-L/BLEU/Semantic Similarity/grounding bên dưới để đánh giá chất lượng thật.**"
+        )
+
     # ── Thẻ tổng quan ───────────────────────────────────────────────────────
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Số câu hỏi đã test", summary["num_queries"])
     resp = summary.get("response_metrics") or {}
-    c2.metric("ROUGE-L", f"{resp.get('rouge_l', 0):.3f}" if resp else "—")
-    c3.metric("BLEU", f"{resp.get('bleu', 0):.3f}" if resp else "—")
-    c4.metric("Semantic Similarity", f"{resp.get('semantic_similarity', 0):.3f}" if resp else "—")
+    c2.metric("ROUGE-L", f"{resp.get('rouge_l', 0):.3f}" if resp else "—", help=METRIC_HELP["rouge_l"])
+    c3.metric("BLEU", f"{resp.get('bleu', 0):.3f}" if resp else "—", help=METRIC_HELP["bleu"])
+    c4.metric("Semantic Similarity", f"{resp.get('semantic_similarity', 0):.3f}" if resp else "—",
+              help=METRIC_HELP["semantic_similarity"])
     g = summary.get("avg_grounding_score")
-    c5.metric("Độ trung thực TB (grounding)", f"{g:.3f}" if g is not None else "—")
+    c5.metric("Độ trung thực TB (grounding)", f"{g:.3f}" if g is not None else "—", help=METRIC_HELP["grounding"])
 
     st.markdown("---")
 
@@ -110,6 +284,11 @@ if IS_NEW_FORMAT:
         fig.update_yaxes(title_text="Score", range=[0, 1], row=row, col=col)
     fig.update_layout(height=600, margin=dict(t=60, b=40, l=60, r=40))
     st.plotly_chart(fig, use_container_width=True)
+    st.caption(
+        "💡 So Recall@10 với Recall@3: nếu Recall@10 cao nhưng Recall@3 thấp → điều luật đúng "
+        "**có được tìm thấy** nhưng rerank xếp hạng chưa tốt. Nếu Recall@10 vẫn thấp → điều luật "
+        "đúng **không nằm trong tập ứng viên** ngay từ đầu (lỗi ở vector_search, không phải rerank)."
+    )
 
     st.markdown("---")
 
@@ -135,6 +314,36 @@ if IS_NEW_FORMAT:
         })
     df = pd.DataFrame(rows)
     st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # ── Xem chi tiết đầy đủ từng câu hỏi (đủ metric @ mọi k, không chỉ rút gọn) ──
+    with st.expander("🔍 Xem chi tiết toàn bộ metric của 1 câu hỏi"):
+        q_idx = st.selectbox(
+            "Chọn câu hỏi:", range(len(detailed)),
+            format_func=lambda i: detailed[i]["query"], key="detail_q_picker",
+        )
+        r = detailed[q_idx]
+        st.markdown(f"**Câu hỏi:** {r['query']}")
+        st.markdown(f"**Câu trả lời:** {r.get('answer', '') or '_(chưa có — câu hỏi này chưa chạy xong)_'}")
+
+        ret_metrics = r.get("retrieval_metrics") or {}
+        if ret_metrics:
+            k_rows = []
+            for k_key, vals in ret_metrics.items():
+                k_rows.append({"Top-K": k_key, **{m.capitalize(): round(v, 3) for m, v in vals.items()}})
+            st.dataframe(pd.DataFrame(k_rows), use_container_width=True, hide_index=True)
+            st.caption(
+                "Mỗi hàng là 1 giá trị k khác nhau — xem mục 📖 Giải thích ở đầu trang để biết ý nghĩa từng cột."
+            )
+
+        resp_m = r.get("response_metrics") or {}
+        gs = r.get("grounding_score")
+        if resp_m or gs is not None:
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("ROUGE-L", f"{resp_m.get('rouge_l', 0):.3f}" if resp_m else "—", help=METRIC_HELP["rouge_l"])
+            m2.metric("BLEU", f"{resp_m.get('bleu', 0):.3f}" if resp_m else "—", help=METRIC_HELP["bleu"])
+            m3.metric("Semantic Similarity", f"{resp_m.get('semantic_similarity', 0):.3f}" if resp_m else "—",
+                      help=METRIC_HELP["semantic_similarity"])
+            m4.metric("Độ trung thực", f"{gs:.3f}" if gs is not None else "—", help=METRIC_HELP["grounding"])
 
     flagged = [r for r in detailed if r.get("grounding_score") is not None and r["grounding_score"] < low_grounding_threshold]
     if flagged:

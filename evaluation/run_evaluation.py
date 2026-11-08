@@ -34,6 +34,28 @@ load_dotenv()
 from metrics.retrieval_metrics import precision_at_k, recall_at_k, hit_at_k, mrr_at_k, ndcg_at_k
 from metrics.response_metrics import rouge_l_score, bleu_score, semantic_similarity
 
+LIVE_PROGRESS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results", "_live_progress.json")
+
+
+def _write_live_progress(*, status: str, completed: int, total: int, data_file: str,
+                          top_k_values: list, results: list) -> None:
+    """Ghi tiến trình đánh giá ra file riêng (results/_live_progress.json) sau mỗi câu hỏi,
+    để dashboard (evaluation/visualization.py) có thể đọc và hiển thị thống kê realtime
+    trong lúc evaluate() vẫn đang chạy (không phải chờ script chạy xong mới có số liệu)."""
+    os.makedirs(os.path.dirname(LIVE_PROGRESS_PATH), exist_ok=True)
+    payload = {
+        "status": status,  # "running" | "done"
+        "data_file": data_file,
+        "completed": completed,
+        "total": total,
+        "summary": summarize(results, top_k_values) if results else None,
+        "detailed": results,
+    }
+    tmp_path = LIVE_PROGRESS_PATH + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, LIVE_PROGRESS_PATH)  # ghi nguyên tử — dashboard không đọc phải file dở dang
+
 
 def offsets_to_mapcs(offsets: set) -> dict:
     """data.json gốc dùng offset dòng MySQL (dataset cũ) làm gold_docs. Pipeline thật
@@ -82,6 +104,8 @@ def run_agentic_query(retriever, neo4j_driver, oai_client, query: str) -> dict:
     answer_parts = []
     retrieved_mapcs = []
     grounding_score = None
+    answer_relevance = None
+    context_relevance = None
 
     for ev in run_agentic_rag(
         openai_client=oai_client,
@@ -97,11 +121,15 @@ def run_agentic_query(retriever, neo4j_driver, oai_client, query: str) -> dict:
             retrieved_mapcs = [p["mapc"] for p in ev.get("passages", []) if p.get("mapc")]
         elif ev["type"] == "grounding":
             grounding_score = ev.get("grounding_score")
+            answer_relevance = ev.get("answer_relevance")
+            context_relevance = ev.get("context_relevance")
 
     return {
         "answer": "".join(answer_parts).strip(),
         "retrieved_mapcs": retrieved_mapcs,
         "grounding_score": grounding_score,
+        "answer_relevance": answer_relevance,
+        "context_relevance": context_relevance,
     }
 
 
@@ -116,7 +144,11 @@ def evaluate(data_file: str, top_k_values: list, limit: int = None) -> list:
     neo4j_driver = get_neo4j()
     retriever = GraphRAGRetriever(neo4j_driver=neo4j_driver, milvus_collection=collection, openai_client=client)
 
+    total = len(dataset)
     per_query_results = []
+    _write_live_progress(status="running", completed=0, total=total, data_file=data_file,
+                          top_k_values=top_k_values, results=per_query_results)
+
     for i, item in enumerate(dataset, 1):
         print(f"[{i}/{len(dataset)}] {item['query'][:60]}...")
         out = run_agentic_query(retriever, neo4j_driver, client, item["query"])
@@ -130,6 +162,8 @@ def evaluate(data_file: str, top_k_values: list, limit: int = None) -> list:
             "answer": out["answer"],
             "gold_response": item.get("gold_response", ""),
             "grounding_score": out["grounding_score"],
+            "answer_relevance": out["answer_relevance"],
+            "context_relevance": out["context_relevance"],
             "retrieval_metrics": {},
             "response_metrics": {},
         }
@@ -148,12 +182,17 @@ def evaluate(data_file: str, top_k_values: list, limit: int = None) -> list:
                 "semantic_similarity": semantic_similarity(out["answer"], item["gold_response"]),
             }
         per_query_results.append(row)
+        _write_live_progress(status="running", completed=i, total=total, data_file=data_file,
+                              top_k_values=top_k_values, results=per_query_results)
 
+    _write_live_progress(status="done", completed=total, total=total, data_file=data_file,
+                          top_k_values=top_k_values, results=per_query_results)
     return per_query_results
 
 
 def summarize(results: list, top_k_values: list) -> dict:
-    summary = {"num_queries": len(results), "retrieval_metrics": {}, "response_metrics": {}, "avg_grounding_score": None}
+    summary = {"num_queries": len(results), "retrieval_metrics": {}, "response_metrics": {},
+               "avg_grounding_score": None, "avg_answer_relevance": None, "avg_context_relevance": None}
     metric_keys = ["precision", "recall", "hit", "mrr", "ndcg"]
     for k in top_k_values:
         summary["retrieval_metrics"][f"k={k}"] = (
@@ -168,9 +207,12 @@ def summarize(results: list, top_k_values: list) -> dict:
             for key in ["rouge_l", "bleu", "semantic_similarity"]
         }
 
-    grounded = [r["grounding_score"] for r in results if r["grounding_score"] is not None]
-    if grounded:
-        summary["avg_grounding_score"] = sum(grounded) / len(grounded)
+    for key, out_key in [("grounding_score", "avg_grounding_score"),
+                          ("answer_relevance", "avg_answer_relevance"),
+                          ("context_relevance", "avg_context_relevance")]:
+        vals = [r[key] for r in results if r.get(key) is not None]
+        if vals:
+            summary[out_key] = sum(vals) / len(vals)
 
     return summary
 
@@ -201,7 +243,19 @@ if __name__ == "__main__":
         print("Thêm --yes để xác nhận chạy. Dùng --limit N để chạy thử với ít câu hỏi hơn trước.")
         sys.exit(0)
 
-    results = evaluate(args.data, args.top_k, limit=args.limit)
+    try:
+        results = evaluate(args.data, args.top_k, limit=args.limit)
+    except BaseException:
+        # Đánh dấu "error" (giữ nguyên completed/detailed đã ghi dở từ evaluate())
+        # để dashboard không hiển thị mãi như đang chạy dở nếu script bị dừng giữa
+        # chừng (Ctrl-C, lỗi OpenAI, ...).
+        if os.path.exists(LIVE_PROGRESS_PATH):
+            with open(LIVE_PROGRESS_PATH, "r", encoding="utf-8") as f:
+                live = json.load(f)
+            live["status"] = "error"
+            with open(LIVE_PROGRESS_PATH, "w", encoding="utf-8") as f:
+                json.dump(live, f, ensure_ascii=False, indent=2)
+        raise
     summary = summarize(results, args.top_k)
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
