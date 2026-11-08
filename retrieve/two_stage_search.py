@@ -8,7 +8,7 @@ from pymilvus import (
     connections,
     Collection,
 )
-from openai import OpenAI
+from langfuse.openai import OpenAI  # drop-in thay cho `from openai import OpenAI` — tự trace generation (token/cost) lên Langfuse
 from sqlalchemy import create_engine
 
 # from hybrid_search import HybridRetriever

@@ -1,0 +1,305 @@
+{
+  "summary": {
+    "num_queries": 5,
+    "retrieval_metrics": {
+      "k=3": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "hit": 0.0,
+        "mrr": 0.0,
+        "ndcg": 0.0
+      },
+      "k=5": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "hit": 0.0,
+        "mrr": 0.0,
+        "ndcg": 0.0
+      },
+      "k=10": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "hit": 0.0,
+        "mrr": 0.0,
+        "ndcg": 0.0
+      }
+    },
+    "response_metrics": {
+      "rouge_l": 0.374879061067913,
+      "bleu": 0.13091406705097858,
+      "semantic_similarity": 0.8427054166793824
+    },
+    "avg_grounding_score": 0.67174,
+    "avg_answer_relevance": 0.7761199999999999,
+    "avg_context_relevance": 0.6159
+  },
+  "detailed": [
+    {
+      "query": "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+      "gold_mapcs": [
+        "14005000000000008000193000000000000000000040256080092000140000802687100130005400",
+        "4401300000000000100000180271990018000010",
+        "33003000000000005500000700000000000000000009000000000000000000802599901810000600",
+        "450080000000000040000380000000000000000000802388700090001000"
+      ],
+      "retrieved_mapcs": [
+        "160010000000000020000220000000000000000033000000000000000000",
+        "3901300000000000200000040000000000000000010200000000000000000001000000000000000000202810900020002000",
+        "39013000000000002000000400000000000000000030000000000000000000402787901440002100",
+        "39013000000000002000000400000000000000000013000000000000000000402734500820006400",
+        "3000200000000000700016200000000000000000",
+        "3000200000000000700016500000000000000000",
+        "39013000000000002000000400000000000000000013000000000000000000402734500820001500",
+        "3901300000000000200000030000000000000000000200000000000000000780000000000000000000802832400180000600",
+        "250050000000000070000470000000000000000000802731900750001100",
+        "3000300000000000100001000000000000000000"
+      ],
+      "answer": "Hành vi chống đối người thi hành công vụ được quy định trong Bộ luật Hình sự và các quy định về xử phạt vi phạm hành chính. Dưới đây là các hình thức xử phạt cụ thể:\n\n### 1. Xử phạt hình sự\nTheo **Điều 16.1.LQ.330** trong Chương XXII của Bộ luật Hình sự:\n- **Hình phạt chính**: Người nào dùng vũ lực, đe dọa dùng vũ lực hoặc dùng thủ đoạn khác để cản trở người thi hành công vụ thực hiện công vụ của họ hoặc ép buộc họ thực hiện hành vi trái pháp luật sẽ bị phạt:\n  - Cải tạo không giam giữ đến 03 năm hoặc phạt tù từ 06 tháng đến 03 năm.\n  \n- **Hình phạt nặng hơn**: Nếu phạm tội thuộc một trong các trường hợp sau, thì bị phạt tù từ 02 năm đến 07 năm:\n  - Có tổ chức;\n  - Phạm tội 02 lần trở lên;\n  - Xúi giục, lôi kéo, kích động người khác phạm tội;\n  - Gây thiệt hại về tài sản 50.000.000 đồng trở lên;\n  - Tái phạm nguy hiểm.\n\n### 2. Xử phạt hành chính\nTheo **Điều 39.13.NĐ.102.21** trong Chương IV quy định về xử phạt vi phạm hành chính:\n- **Phạt tiền từ 1.000.000 đồng đến 4.000.000 đồng** đối với hành vi môi giới, giúp sức cho cá nhân, tổ chức vi phạm trốn tránh việc thanh tra, kiểm tra, kiểm soát của người thi hành công vụ.\n  \n- **Phạt tiền từ 4.000.000 đồng đến 6.000.000 đồng** đối với các hành vi:\n  - Cản trở hoặc không chấp hành yêu cầu thanh tra, kiểm tra, kiểm soát của người thi hành công vụ;\n  - Có lời nói, hành động đe dọa, lăng mạ, xúc phạm danh dự, nhân phẩm người thi hành công vụ;\n  - Tổ chức, xúi giục, giúp sức, lôi kéo hoặc kích động người khác không chấp hành yêu cầu của người thi hành công vụ.\n\n- **Phạt tiền từ 6.000.000 đồng đến 8.000.000 đồng** đối với các hành vi:\n  - Dùng vũ lực, đe dọa dùng vũ lực chống người thi hành công vụ;\n  - Gây thiệt hại về tài sản, phương tiện của cơ quan nhà nước, của người thi hành công vụ;\n  - Đưa hối lộ cho người thi hành công vụ.\n\n### Biện pháp khắc phục\n- Buộc xin lỗi công khai đối với hành vi xúc phạm danh dự, nhân phẩm người thi hành công vụ.\n\nNhư vậy, hành vi chống đối người thi hành công vụ có thể bị xử lý cả về hình sự lẫn hành chính, tùy thuộc vào tính chất và mức độ vi phạm.",
+      "gold_response": "Hành vi chống đối người thi hành công vụ theo quy định của pháp luật Việt Nam có thể bị xử phạt với các hình thức khác nhau tùy theo tính chất và mức độ vi phạm.\n\nXử phạt vi phạm hành chính:\n\nNgười có hành vi dùng vũ lực, đe dọa dùng vũ lực hoặc không chấp hành hiệu lệnh, yêu cầu của người thi hành công vụ có thể bị phạt tiền từ 6.000.000 đồng đến 8.000.000 đồng.\nHành vi cản trở, chống đối người thi hành công vụ về bảo đảm trật tự, an toàn giao thông đường bộ hoặc các lĩnh vực khác cũng bị xử phạt từ 1.000.000 đồng đến 8.000.000 đồng, tùy theo mức độ vi phạm.\nTrong một số trường hợp, hành vi chống đối có thể bị xử lý hành chính bằng các hình phạt phạt tiền hoặc xử phạt khác theo quy định của Nghị định số 167/2013/NĐ-CP.\n\nTội phạm hình sự:\n\nHành vi chống người thi hành công vụ còn có thể cấu thành tội phạm hình sự với mức án phạt gồm phạt cải tạo không giam giữ đến 3 năm hoặc phạt tù từ 6 tháng đến 3 năm.\nTrong các trường hợp nghiêm trọng, mức phạt tù có thể lên đến từ 2 đến 7 năm tù, đặc biệt khi dùng vũ lực, đe dọa dùng vũ lực hoặc gây hậu quả nghiêm trọng liên quan đến an toàn của người thi hành công vụ.\n\nChi tiết xử phạt theo mức độ hành vi:\n\nDùng vũ lực hoặc đe dọa dùng vũ lực có thể bị xử lý hình sự hoặc xử phạt hành chính cao nhất đến mức phạt tù từ 2 đến 7 năm.\nCác hành vi khác như xúc phạm, đe dọa, cản trở, chống đối có thể bị xử phạt hành chính từ 3 triệu đến 8 triệu đồng.\nLưu ý, các quy định cụ thể có thể thay đổi tùy theo từng tình huống và mức độ phạm tội, cũng như các quy định mới nhất của pháp luật.",
+      "grounding_score": 0.6378,
+      "answer_relevance": 0.7461,
+      "context_relevance": 0.5818,
+      "retrieval_metrics": {
+        "k=3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=5": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=10": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
+      },
+      "response_metrics": {
+        "rouge_l": 0.3944353518821604,
+        "bleu": 0.20880040111112944,
+        "semantic_similarity": 0.7622442245483398
+      }
+    },
+    {
+      "query": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+      "gold_mapcs": [
+        "4501100000000000200001100000000000000000",
+        "4501100000000000200001200000000000000000"
+      ],
+      "retrieved_mapcs": [
+        "3600300000000000100000500000000000000000",
+        "39013000000000005000000200000000000000001400000000000000000000402787201200004500",
+        "39013000000000005000000200000000000000001401000000000000000000402787901400004900",
+        "360030000000000030000230000000000000000000402758200170001500",
+        "3600300000000000100000400000000000000000",
+        "3600300000000000100000200000000000000000",
+        "3600300000000000300002600000000000000000",
+        "3600300000000000600003800000000000000000",
+        "3600300000000000400002700000000000000000",
+        "3600300000000000300002100000000000000000"
+      ],
+      "answer": "Quyền và nghĩa vụ cơ bản của thanh niên được quy định trong Luật Thanh niên Việt Nam. Dưới đây là một số điểm chính:\n\n1. **Quyền và nghĩa vụ của thanh niên**:\n   - Thanh niên có quyền và nghĩa vụ được công nhận, tôn trọng, bảo vệ và bảo đảm thực hiện theo quy định của Hiến pháp và pháp luật (Điều 36.3.LQ.5).\n   - Không phân biệt dân tộc, giới tính, thành phần xã hội, tín ngưỡng, tôn giáo, trình độ văn hóa, nghề nghiệp trong thực hiện quyền và nghĩa vụ của thanh niên.\n   - Nhà nước, tổ chức, cơ sở giáo dục, gia đình và cá nhân có trách nhiệm tạo điều kiện để thanh niên thực hiện quyền và nghĩa vụ theo quy định của pháp luật.\n\n2. **Vai trò của thanh niên**:\n   - Thanh niên là lực lượng xã hội to lớn, xung kích, sáng tạo, đi đầu trong công cuộc đổi mới, xây dựng và bảo vệ Tổ quốc Việt Nam xã hội chủ nghĩa (Điều 36.3.LQ.4).\n\n3. **Chính sách của Nhà nước đối với thanh niên**:\n   - Chính sách của Nhà nước phải bảo đảm mục tiêu phát triển thanh niên, tạo điều kiện cho thanh niên thực hiện quyền, nghĩa vụ, trách nhiệm và phát huy năng lực (Điều 36.3.LQ.5).\n   - Thanh niên từ đủ 16 tuổi đến dưới 18 tuổi được bảo đảm hoàn thành phổ cập giáo dục, tham gia hoạt động văn hóa, thể dục, thể thao, và được đào tạo nghề phù hợp với lứa tuổi (Điều 36.3.LQ.26).\n\n4. **Nghĩa vụ của thanh niên**:\n   - Thanh niên có nghĩa vụ chấp hành chính sách, pháp luật của Nhà nước, tích cực học tập, thực hiện đầy đủ nghĩa vụ công dân, và chịu sự giáo dục, quản lý, giám sát của gia đình và nhà trường (Điều 39.13.NĐ.94.45).\n\nNhững quy định này thể hiện sự quan tâm của Nhà nước đối với thanh niên, nhằm tạo điều kiện cho họ phát triển toàn diện và đóng góp vào sự nghiệp xây dựng và bảo vệ Tổ quốc.",
+      "gold_response": "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật Việt Nam, cụ thể là theo Luật Thanh niên 2005 và Luật Thanh niên 2020, được quy định rõ ràng nhằm đảm bảo quyền lợi, nghĩa vụ và trách nhiệm của thanh niên trong xã hội:\n\n1. Quyền của thanh niên\nCó quyền được học tập, lao động, sáng tạo, cống hiến và phát triển bản thân.\nĐược hưởng các chính sách, chế độ ưu đãi, hỗ trợ của Nhà nước, gia đình và xã hội phù hợp với quy định của pháp luật.\nTham gia vào các hoạt động của xã hội, góp ý, kiến nghị với nhà nước và các tổ chức về quyền, lợi ích của thanh niên.\nThực hiện nghĩa vụ công dân và tham gia các hoạt động xây dựng, bảo vệ đất nước.\n\n2. Nghĩa vụ của thanh niên\nBảo vệ tổ quốc là nghĩa vụ thiêng liêng và cao quý của thanh niên, bao gồm việc tham gia nghĩa vụ quân sự hoặc công an nhân dân khi có lệnh.\nRèn luyện đạo đức, nhân cách, lối sống lành mạnh, tích cực góp phần xây dựng đất nước.\nTham gia các hoạt động giáo dục quốc phòng, an ninh, phòng chống tội phạm, giữ gìn trật tự an toàn xã hội.\nThực hiện đúng quy định của pháp luật, chấp hành pháp luật về nghĩa vụ tham gia công tác xã hội, cộng đồng.\nPhối hợp xây dựng và giữ gìn truyền thống, đạo đức, lối sống văn hóa của dân tộc.\n\n3. Những trách nhiệm khác\nThanh niên còn có trách nhiệm tham gia tích cực vào các hoạt động của cộng đồng, xã hội, góp phần phát triển văn hóa – xã hội, bảo vệ môi trường.\nTuân thủ pháp luật, giữ gìn đạo đức, nhân phẩm và danh dự của bản thân, gia đình, cộng đồng và đất nước.\n\n4. Chính sách của Nhà nước đối với thanh niên\nNhà nước tạo điều kiện, hỗ trợ thanh niên trong học tập, phát triển kỹ năng, nghề nghiệp, việc làm, tạo môi trường thuận lợi để thanh niên phát huy tối đa khả năng của mình.\nTham gia xây dựng chính sách, pháp luật phù hợp với quyền và nghĩa vụ của thanh niên.\n\nCác quy định liên quan:\nLuật Thanh niên 2005, Điều 3: quy định về quyền và nghĩa vụ của thanh niên theo pháp luật.\nLuật Thanh niên 2020, Điều 15: quy định trách nhiệm của thanh niên đối với bản thân và xã hội.\nHiến pháp và các nghị định hướng dẫn thi hành pháp luật liên quan tới quyền lợi của thanh niên.\n\nLưu ý, quyền và nghĩa vụ của thanh niên luôn được pháp luật quy định rõ nhằm thúc đẩy tinh thần trách nhiệm, cống hiến của thế hệ trẻ đối với quê hương, đất nước.",
+      "grounding_score": 0.7145,
+      "answer_relevance": 0.8216,
+      "context_relevance": 0.6577,
+      "retrieval_metrics": {
+        "k=3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=5": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=10": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
+      },
+      "response_metrics": {
+        "rouge_l": 0.37300985595147834,
+        "bleu": 0.12376060698279504,
+        "semantic_similarity": 0.9218129515647888
+      }
+    },
+    {
+      "query": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+      "gold_mapcs": [
+        "270020000000000080000480000000000000000000402582300380003400",
+        "2700200000000000900004900000000000000000",
+        "270020000000000095000060000000000000000100802603700370000500",
+        "270020000000000095000070000000000000000100802603700380000800"
+      ],
+      "retrieved_mapcs": [
+        "24002000000000009000002000000000000000000940000000000000000000402673801560008800",
+        "130010000000000010000140000000000000000000502175300620000300",
+        "2400500000000000100000140288230106000040",
+        "24004000000000004000005000000000000000000690000000000000000000402665901090001700",
+        "060030000000000090000500000000000000000000802789100030000400",
+        "060050000000000010000050000000000000000000402787801310010200",
+        "0600100000000000100000400000000000000000",
+        "0600100000000000100000300000000000000000",
+        "06002000000000002000004000000000000000000200000000000000000000402630801030000600",
+        "240030000000000010000060000000000000000000501973401850000300"
+      ],
+      "answer": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số tại Việt Nam được quy định trong nhiều văn bản pháp luật, trong đó có các điều luật cụ thể như sau:\n\n1. **Chính sách hỗ trợ đầu tư** (Điều 24.2 Nghị định 4/88):\n   - Ngân sách nhà nước hỗ trợ đầu tư cho các hoạt động như chuyển giao công nghệ cao, phát triển kết cấu hạ tầng, hợp tác bảo vệ và phát triển rừng của đồng bào dân tộc thiểu số.\n   - Cụ thể, hỗ trợ cho việc trồng rừng sản xuất, phát triển lâm sản ngoài gỗ, và cải thiện sinh kế cho người dân vùng đệm của các khu rừng đặc dụng và rừng phòng hộ.\n   - Hỗ trợ vay vốn từ Ngân hàng Chính sách xã hội cho hộ gia đình đồng bào dân tộc thiểu số tham gia trồng rừng sản xuất.\n\n2. **Nguyên tắc thực hiện chính sách hỗ trợ** (Điều 24.5 Nghị định 2/4):\n   - Hỗ trợ phải có trọng tâm, thời hạn, và phù hợp với mục tiêu phát triển.\n   - Đảm bảo công khai, minh bạch, không chồng chéo và có hiệu quả.\n   - Mức hỗ trợ cụ thể sẽ được căn cứ vào khả năng cân đối ngân sách nhà nước trong từng thời kỳ.\n\n3. **Hỗ trợ phát triển sinh kế**:\n   - Hỗ trợ gạo cho hộ gia đình nghèo, hộ gia đình đồng bào dân tộc thiểu số tại các vùng kinh tế xã hội đặc biệt khó khăn thực hiện bảo vệ rừng và phát triển lâm sản ngoài gỗ.\n   - Hỗ trợ xây dựng nhân rộng mô hình phát triển kinh tế lâm nghiệp hiệu quả, bền vững.\n\nCác chính sách này nhằm mục đích cải thiện đời sống, phát triển kinh tế cho các vùng dân tộc thiểu số, đồng thời bảo vệ môi trường và tài nguyên thiên nhiên.",
+      "gold_response": "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số tại Việt Nam được quy định rõ trong các văn bản pháp luật, đặc biệt là Nghị quyết của Quốc hội, Luật về chính sách đối với người dân tộc thiểu số và các chương trình, dự án của chính phủ nhằm thúc đẩy phát triển toàn diện các vùng này.\n\n1. Mục tiêu chung của chính sách\nBảo đảm quyền bình đẳng, tạo điều kiện thuận lợi để các dân tộc thiểu số phát triển kinh tế, nâng cao đời sống, phổ cập giáo dục, y tế, bảo vệ môi trường, giữ gìn bản sắc văn hóa truyền thống.\nGiảm chênh lệch phát triển giữa các vùng, thúc đẩy sự phát triển bền vững, góp phần giữ vững quốc phòng, an ninh và giữ gìn chủ quyền quốc gia.\n\n2. Các chính sách hỗ trợ cụ thể:\nHỗ trợ về đất đai, tài chính: Nhà nước ưu đãi, hỗ trợ về đất đai, tín dụng, vốn vay ưu đãi để phát triển sản xuất nông nghiệp, thủy sản, công nghiệp, dịch vụ và xây dựng hạ tầng kinh tế – xã hội.\nPhát triển hạ tầng cơ sở: Đầu tư xây dựng, nâng cấp các công trình giao thông, thủy lợi, điện, nước sạch, trường học, trạm y tế, nhà ở.\nChính sách về giáo dục và đào tạo: Hỗ trợ học bổng, phát triển hệ thống trường lớp, đào tạo nghề phù hợp với điều kiện của các dân tộc thiểu số.\nChính sách về y tế: Tăng cường các cơ sở y tế, cung cấp dịch vụ y tế, phòng chống bệnh tật, nâng cao chăm sóc sức khỏe cộng đồng.\nBảo tồn và phát huy giá trị văn hóa truyền thống: Hỗ trợ các hoạt động bảo tồn, phát huy di sản, văn hóa, phong tục tập quán phù hợp, góp phần xây dựng bản sắc dân tộc.\nChính sách về xã hội và bảo vệ môi trường: Hỗ trợ các hoạt động giảm nghèo, xây dựng mô hình sinh kế, phòng chống thiên tai, quản lý rừng và bảo vệ tài nguyên tự nhiên.\n\n3. Các chương trình, dự án hỗ trợ\nThực hiện các chương trình mục tiêu quốc gia như Chương trình Mục tiêu phát triển kinh tế – xã hội miền núi, vùng dân tộc thiểu số và※ miến núi đặc biệt khó khăn.\nBan hành các chính sách khuyến khích đầu tư của doanh nghiệp và cộng đồng để thúc đẩy phát triển bền vững.\n\n4. Pháp lý liên quan\nNghị quyết số 24/NQ-CP về chính sách phát triển dân tộc thiểu số.\nLuật Dân tộc 2005, sửa đổi bổ sung 2019, quy định về chính sách, quyền lợi và các chương trình hỗ trợ.\nCác quyết định, nghị định hướng dẫn thực hiện chính sách của Chính phủ và các bộ ngành liên quan.\n\nTóm lại:\nChính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số nhằm mục tiêu thúc đẩy phát triển toàn diện và bền vững, giảm chênh lệch và bảo đảm quyền lợi của các dân tộc thiểu số trong các lĩnh vực như giáo dục, y tế, phát triển hạ tầng, sản xuất kinh doanh và bảo vệ bản sắc văn hóa.",
+      "grounding_score": 0.6084,
+      "answer_relevance": 0.7524,
+      "context_relevance": 0.4312,
+      "retrieval_metrics": {
+        "k=3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=5": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=10": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
+      },
+      "response_metrics": {
+        "rouge_l": 0.3760683760683761,
+        "bleu": 0.10443847241436548,
+        "semantic_similarity": 0.8980702757835388
+      }
+    },
+    {
+      "query": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+      "gold_mapcs": [
+        "170010000000000055000320000000000000000000802626200775506500",
+        "170010000000000055000320000000000000000000802626200775505600",
+        "170010000000000055000320000000000000000000802626200775503500",
+        "170010000000000055000350000000000000000000802766600990000400"
+      ],
+      "retrieved_mapcs": [
+        "3900700000000000500003200000000000000000",
+        "390130000000000030000001000000000000000009600000000000000000",
+        "39007000000000006000045000000000000000000040278690116000840000802815700620000500",
+        "390070000000000050000340000000000000000000402786901160005600",
+        "39013000000000003000000400000000000000001100000000000000000000402786901160005600",
+        "39013000000000003000000400000000000000001100000000000000000000402786901160005400",
+        "390070000000000050000350000000000000000000402786901160007500",
+        "390070000000000050000340000000000000000000402786901160005700",
+        "39013000000000003000000400000000000000001100000000000000000000402786901160005700",
+        "39013000000000003000000400000000000000001100000000000000000000402786901160005500"
+      ],
+      "answer": "Người nghiện ma túy có thể bị áp dụng biện pháp cai nghiện bắt buộc trong các trường hợp sau đây, theo quy định tại **Điều 39.7.LQ.32** trong **Chương V - CAI NGHIỆN MA TÚY** của Luật Xử lý vi phạm hành chính:\n\n1. **Không đăng ký, không thực hiện hoặc tự ý chấm dứt cai nghiện ma túy tự nguyện.**\n2. **Trong thời gian cai nghiện ma túy tự nguyện bị phát hiện sử dụng trái phép chất ma túy.**\n3. **Người nghiện ma túy các chất dạng thuốc phiện không đăng ký, không thực hiện hoặc tự ý chấm dứt điều trị nghiện các chất dạng thuốc phiện bằng thuốc thay thế hoặc bị chấm dứt điều trị nghiện các chất dạng thuốc phiện bằng thuốc thay thế do vi phạm quy định về điều trị nghiện.**\n4. **Trong thời gian quản lý sau cai nghiện ma túy mà tái nghiện.**\n\nNgoài ra, theo **Điều 39.13.LQ.96**, biện pháp này chỉ áp dụng đối với người nghiện ma túy từ đủ 18 tuổi trở lên, và không áp dụng đối với những người không có năng lực trách nhiệm hành chính, phụ nữ đang mang thai có chứng nhận y tế, hoặc phụ nữ hoặc người duy nhất đang nuôi con nhỏ dưới 36 tháng tuổi. \n\nNhư vậy, việc áp dụng biện pháp cai nghiện bắt buộc nhằm mục đích bảo vệ sức khỏe cộng đồng và hỗ trợ người nghiện trong quá trình điều trị.",
+      "gold_response": "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc theo quy định của pháp luật Việt Nam trong các trường hợp cụ thể nhằm mục đích kiểm soát, điều trị và giáo dục người nghiện để hạn chế tác động tiêu cực của ma túy đối với cá nhân và cộng đồng.\n\nCác trường hợp áp dụng biện pháp cai nghiện bắt buộc\n\nNgười nghiện ma túy có hành vi vi phạm pháp luật:\n\nKhi người nghiện ma túy phạm tội hoặc có hành vi vi phạm pháp luật mà có nguyên nhân do sử dụng ma túy, và cần được giám sát, điều trị, cai nghiện nhằm đảm bảo an toàn xã hội.\n\nNgười đã có quyết định cai nghiện tự nguyện nhưng không chấp hành:\n\nNếu người nghiện đã được vận động, khuyên răn, thực hiện cai nghiện tự nguyện nhưng không hợp tác hoặc tiếp tục sử dụng ma túy, có thể bị đưa vào diện bắt buộc cai nghiện nhằm đảm bảo việc điều trị, phục hồi.\n\nNgười trong độ tuổi từ 12 đến 18:\n\nTrẻ vị thành niên nghiện ma túy có thể bị áp dụng biện pháp cai nghiện bắt buộc để bảo vệ quyền lợi và sự phát triển của trẻ, đồng thời giúp họ hòa nhập cộng đồng và giảm nguy cơ tái nghiện.\n\nNgười nghiện ma túy thuộc diện kiểm tra, giám sát của nhà chức trách:\n\nNhững người nghiện ma túy cần theo dõi, giám sát để đảm bảo họ không tái phạm hoặc sử dụng ma túy trở lại, nhất là những người có tiền án hoặc hành vi gây rối trật tự xã hội.\n\nCác hình thức cai nghiện bắt buộc\n\nĐiều trị bắt buộc tại trung tâm xã hội hoặc cơ sở cai nghiện bắt buộc của Nhà nước.\nThực hiện các biện pháp giám sát, theo dõi, hỗ trợ điều trị và phục hồi tâm lý, y tế cho người nghiện.\n\nCác quy trình pháp luật\n\nQuyết định cai nghiện bắt buộc do cơ quan có thẩm quyền ra quyết định sau khi xác minh, xem xét các yếu tố liên quan.\nThời gian cai nghiện bắt buộc theo quy định của pháp luật tối đa là 24 tháng, có thể gia hạn trong các trường hợp đặc biệt.\n\nLưu ý:\nChính sách cai nghiện bắt buộc nhằm mục đích không chỉ giám sát, kiểm soát người nghiện ma túy mà còn hướng tới phục hồi thể chất, tinh thần, hỗ trợ tái hòa nhập cộng đồng.",
+      "grounding_score": 0.7837,
+      "answer_relevance": 0.8367,
+      "context_relevance": 0.6633,
+      "retrieval_metrics": {
+        "k=3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=5": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=10": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
+      },
+      "response_metrics": {
+        "rouge_l": 0.35327102803738325,
+        "bleu": 0.10022191773595002,
+        "semantic_similarity": 0.7904841303825378
+      }
+    },
+    {
+      "query": "Người bị tạm giữ có những quyền gì theo quy định pháp luật?",
+      "gold_mapcs": [
+        "17001000000000002000000500000000000000000410000000000000000000402605201740001700",
+        "3000300000000000100000140274620133000020",
+        "170010000000000040000580000000000000000000802600702965501000"
+      ],
+      "retrieved_mapcs": [
+        "3701000000000000100000900000000000000000",
+        "37007000000000001000007000000000000000000010000000000000000011700000000000000000",
+        "39013000000000004000000200000000000000001220000000000000000000402787901420001900",
+        "3701000000000000100000800000000000000000",
+        "39013000000000004000000200000000000000001220000000000000000000402787901420002100",
+        "37007000000000001000007000000000000000000010000000000000000012000000000000000000",
+        "37007000000000001000002000000000000000000160000000000000000000802706600460000300",
+        "370100000000000010000050000000000000000000802752800080001300",
+        "3701000000000000100000300000000000000000",
+        "390130000000000040000002000000000000000012200000000000000000"
+      ],
+      "answer": "Theo quy định của pháp luật Việt Nam, người bị tạm giữ có những quyền sau đây:\n\n1. **Quyền được bảo vệ**: Được bảo vệ an toàn tính mạng, thân thể, tài sản, tôn trọng danh dự, nhân phẩm; được phổ biến các quyền và nghĩa vụ của mình, nội quy của cơ sở giam giữ.\n\n2. **Quyền bầu cử**: Được thực hiện quyền bầu cử theo quy định của Luật bầu cử đại biểu Quốc hội và đại biểu Hội đồng nhân dân, quyền bỏ phiếu trưng cầu ý dân theo quy định của Luật trưng cầu ý dân.\n\n3. **Chế độ sinh hoạt**: Được bảo đảm chế độ ăn, ở, mặc, đồ dùng sinh hoạt cá nhân, chăm sóc y tế, sinh hoạt tinh thần, gửi, nhận thư, nhận quà, nhận sách, báo, tài liệu.\n\n4. **Gặp gỡ**: Được gặp thân nhân, người bào chữa, tiếp xúc lãnh sự.\n\n5. **Quyền tự bào chữa**: Được hướng dẫn, giải thích và bảo đảm thực hiện quyền tự bào chữa, nhờ người bào chữa, trợ giúp pháp lý.\n\n6. **Giao dịch dân sự**: Được gặp người đại diện hợp pháp để thực hiện giao dịch dân sự.\n\n7. **Yêu cầu trả tự do**: Được yêu cầu trả tự do khi hết thời hạn tạm giữ, thời hạn tạm giam.\n\n8. **Khiếu nại**: Được khiếu nại, tố cáo hành vi vi phạm pháp luật.\n\n9. **Bồi thường thiệt hại**: Được bồi thường thiệt hại theo quy định của Luật trách nhiệm bồi thường của Nhà nước nếu bị giam, giữ trái pháp luật.\n\n10. **Các quyền khác**: Được hưởng các quyền khác của công dân nếu không bị hạn chế bởi Luật này và luật khác có liên quan, trừ trường hợp các quyền đó không thể thực hiện được do họ đang bị tạm giữ, tạm giam.\n\nNgoài ra, người bị tạm giữ cũng có các nghĩa vụ như chấp hành quyết định, yêu cầu, hướng dẫn của cơ quan có thẩm quyền và chấp hành nội quy của cơ sở giam giữ (Điều 37.10.LQ.9, Chương I, Luật Tố tụng hình sự).",
+      "gold_response": "Người bị tạm giữ theo quy định của pháp luật Việt Nam có các quyền cơ bản sau đây nhằm đảm bảo quyền lợi, quyền và nghĩa vụ hợp pháp của họ trong quá trình tạm giữ:\n\nCác quyền của người bị tạm giữ\n\nQuyền được biết lý do, quyền và nghĩa vụ của mình:\n\nNgười bị tạm giữ có quyền được thông báo rõ ràng về lý do, căn cứ và thời hạn tạm giữ.\nĐược biết về quyền và nghĩa vụ của mình trong quá trình tạm giữ theo quy định của pháp luật.\n\nQuyền được mở rộng, kiểm tra, tiếp xúc, liên hệ với người thân, luật sư, người đại diện hợp pháp:\n\nNgười tạm giữ có quyền gặp gỡ, liên hệ với luật sư, người đại diện pháp lý hoặc người thân để trao đổi, nhờ giúp đỡ, bảo vệ quyền lợi của mình.\n\nQuyền được giữ gìn danh dự, nhân phẩm và an toàn:\n\nNgười tạm giữ có quyền được tôn trọng danh dự, nhân phẩm, không bị xúc phạm, hành hạ về thể chất hoặc tinh thần.\n\nQuyền khai báo, trình bày ý kiến, cung cấp chứng cứ, tài liệu:\n\nNgười bị tạm giữ có quyền tự do trình bày, cung cấp lời khai, chứng cứ phù hợp với quy định pháp luật.\n\nQuyền đề nghị, khiếu nại, tố cáo:\n\nNgười tạm giữ có quyền đề nghị, khiếu nại về việc tạm giữ, đề nghị xem xét lại hoặc tố cáo hành vi vi phạm quyền, lợi ích hợp pháp của mình.\n\nQuyền được bảo đảm các điều kiện sinh hoạt tối thiểu:\n\nNgười bị tạm giữ có quyền sử dụng các dịch vụ thiết yếu như ăn, uống, vệ sinh, chăm sóc sức khỏe phù hợp theo quy định.\n\nQuyền được luật sư bào chữa hoặc người đại diện hợp pháp trong quá trình tố tụng liên quan.\n\nCác quy định pháp lý liên quan:\nHiến pháp 2013 về quyền của công dân trong các trường hợp bị tạm giữ.\nLuật Tạm giữ, đảm bảo, giam giữ, thi hành tạm giữ, tạm giam năm 2015.\nBộ luật Tố tụng Hình sự 2015.\nNghị định 113/2018/NĐ-CP hướng dẫn thi hành luật về quyền, nghĩa vụ của người tạm giữ.\n\nLưu ý:\nNgười bị tạm giữ còn có nghĩa vụ giữ bí mật về các hành vi, tài liệu, chứng cứ liên quan đến vụ việc, không gây cản trở hoạt động điều tra của cơ quan có thẩm quyền.",
+      "grounding_score": 0.6143,
+      "answer_relevance": 0.7238,
+      "context_relevance": 0.7455,
+      "retrieval_metrics": {
+        "k=3": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=5": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "k=10": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "hit": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
+      },
+      "response_metrics": {
+        "rouge_l": 0.3776106934001671,
+        "bleu": 0.11734893701065281,
+        "semantic_similarity": 0.8409155011177063
+      }
+    }
+  ]
+}

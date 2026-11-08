@@ -114,6 +114,18 @@ export function PassagePanel({
   const [open, setOpen]         = useState<Record<number, boolean>>({});
   const [fullView, setFullView] = useState<Passage | null>(null);
 
+  // score là điểm xếp hạng cộng dồn (base_score + BM25 + semantic) của backend,
+  // thường > 1.0 và hầu như luôn nằm trong 1 khoảng hẹp (vd 1.20-1.33) — kẹp cứng
+  // ở 100% khiến TẤT CẢ passage đều hiện 100%, mất hết khác biệt. Chuẩn hoá
+  // min-max NGAY TRONG danh sách passage của câu trả lời này để % phản ánh đúng
+  // xếp hạng tương đối (cao nhất luôn 100%, thấp nhất về gần 0%).
+  const scores = passages.map((p) => p.score).filter((s): s is number => s !== undefined);
+  const minScore = scores.length ? Math.min(...scores) : 0;
+  const maxScore = scores.length ? Math.max(...scores) : 1;
+  const scoreRange = maxScore - minScore;
+  const displayScorePct = (score: number) =>
+    scoreRange > 0 ? Math.round(((score - minScore) / scoreRange) * 100) : 100;
+
   return (
     <>
       <aside
@@ -207,8 +219,12 @@ export function PassagePanel({
                     {isWeb ? "Web" : "Pháp điển"}
                   </span>
                   {p.score !== undefined && (
-                    <span className="shrink-0 text-[10px] tabular-nums" style={{ color: "var(--text-muted)" }}>
-                      {(p.score * 100).toFixed(0)}%
+                    <span
+                      className="shrink-0 text-[10px] tabular-nums"
+                      style={{ color: "var(--text-muted)" }}
+                      title="Mức độ liên quan tương đối so với các văn bản khác trong danh sách này (không phải xác suất tuyệt đối)"
+                    >
+                      {displayScorePct(p.score)}%
                     </span>
                   )}
                 </button>

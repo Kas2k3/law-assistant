@@ -8,12 +8,14 @@ if str(_ROOT) not in sys.path:
 
 import os
 import tempfile
+import time
 from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from fastapi import FastAPI, UploadFile, File
+from langfuse import get_client, observe
 from openai import OpenAI
 from pydantic import BaseModel, Field
 import json as _json
@@ -22,6 +24,7 @@ import json as _json
 load_dotenv()
 
 from agents.pipeline import Action, run_pre_retrieve
+from evaluation.live_log import log_live_turn
 from retrieve.build_graph import GraphRAGRetriever, get_neo4j
 from retrieve.two_stage_search import client, collection
 from services.agentic_rag import _chunk_stream_text, run_agentic_rag
@@ -61,11 +64,37 @@ class RagChatResponse(BaseModel):
     passages: List[Dict[str, Any]] = Field(default_factory=list)
     grounding_score: Optional[float] = None
     flagged_sentences: List[str] = Field(default_factory=list)
+    answer_relevance: Optional[float] = None
+    context_relevance: Optional[float] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 # (xây passages/sources/token-chunking giờ nằm trong services.agentic_rag,
 #  dùng chung bởi run_agentic_rag - xem import ở trên)
+
+
+def _is_timeout_error(e: Exception) -> bool:
+    return "timeout" in type(e).__name__.lower() or "timeout" in str(e).lower()
+
+
+def _score_outcome(outcome: str, *, is_error: bool = False, is_timeout: bool = False) -> None:
+    """Đẩy score lên Langfuse cho Dashboard (Safety / Reliability / request log):
+      - request_outcome (CATEGORICAL): quick/spam/escalate/rejected/proceed/error
+      - guardrail_pass (BOOLEAN): false nếu bị chặn bởi guardrail (spam/escalate/rejected)
+      - request_error, timeout (BOOLEAN): chỉ có ý nghĩa ở nhánh có gọi LLM/tool thật
+        (proceed/error) — các nhánh rule-based (quick/spam/escalate/rejected) không
+        có rủi ro timeout nên không chấm.
+    """
+    client = get_client()
+    client.score_current_trace(name="request_outcome", value=outcome, data_type="CATEGORICAL")
+    client.score_current_trace(
+        name="guardrail_pass",
+        value=0 if outcome in ("spam", "escalate", "rejected") else 1,
+        data_type="BOOLEAN",
+    )
+    if outcome in ("proceed", "error"):
+        client.score_current_trace(name="request_error", value=1 if is_error else 0, data_type="BOOLEAN")
+        client.score_current_trace(name="timeout", value=1 if is_timeout else 0, data_type="BOOLEAN")
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -75,31 +104,39 @@ def health() -> Dict[str, bool]:
 
 
 @app.post("/rag/chat", response_model=RagChatResponse)
+@observe(name="rag_chat_request")
 def rag_chat(req: RagChatRequest) -> RagChatResponse:
+    t0 = time.perf_counter()
     prompt = req.prompt.strip()
     history_for_processing = [m.model_dump() for m in req.history]
     decision = run_pre_retrieve(prompt, history_for_processing)
 
     if decision.action == Action.QUICK_ANSWER:
-        return RagChatResponse(answer=decision.answer_text or "", action="quick")
+        answer = decision.answer_text or ""
+        _score_outcome("quick")
+        log_live_turn(query=prompt, normalized_query=None, action="quick", answer=answer,
+                      elapsed_ms=(time.perf_counter() - t0) * 1000)
+        return RagChatResponse(answer=answer, action="quick")
 
     if decision.action == Action.SPAM:
-        return RagChatResponse(
-            action="spam",
-            answer=(
-                "Xin lỗi, tôi không thể xử lý yêu cầu của bạn vì nó có dấu hiệu spam. "
-                "Bạn hãy cung cấp thông tin cụ thể hơn để tôi có thể hỗ trợ tốt nhất. Cảm ơn bạn!"
-            ),
+        answer = (
+            "Xin lỗi, tôi không thể xử lý yêu cầu của bạn vì nó có dấu hiệu spam. "
+            "Bạn hãy cung cấp thông tin cụ thể hơn để tôi có thể hỗ trợ tốt nhất. Cảm ơn bạn!"
         )
+        _score_outcome("spam")
+        log_live_turn(query=prompt, normalized_query=None, action="spam", answer=answer,
+                      elapsed_ms=(time.perf_counter() - t0) * 1000)
+        return RagChatResponse(action="spam", answer=answer)
 
     if decision.action == Action.ESCALATE:
-        return RagChatResponse(
-            action="escalate",
-            answer=(
-                "Mình rất tiếc khi đem lại trải nghiệm không tốt cho bạn. "
-                "Bạn có muốn mình chuyển tiếp vấn đề cho cán bộ trực tiếp xử lý không?"
-            ),
+        answer = (
+            "Mình rất tiếc khi đem lại trải nghiệm không tốt cho bạn. "
+            "Bạn có muốn mình chuyển tiếp vấn đề cho cán bộ trực tiếp xử lý không?"
         )
+        _score_outcome("escalate")
+        log_live_turn(query=prompt, normalized_query=None, action="escalate", answer=answer,
+                      elapsed_ms=(time.perf_counter() - t0) * 1000)
+        return RagChatResponse(action="escalate", answer=answer)
 
     # Action.PROCEED
     base = (
@@ -112,15 +149,15 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
 
     intent_result = detect_intent(normalized_query) or "Có"
     if "không" in intent_result.lower():
-        return RagChatResponse(
-            action="proceed",
-            normalized_query=normalized_query,
-            answer=(
-                "Có vẻ yêu cầu của bạn chưa rõ ràng hoặc không nằm trong phạm vi mình xử lý. "
-                "Mình là trợ lý pháp lý hỗ trợ tìm kiếm và giải thích luật. "
-                "Bạn có thể hỏi về các quy định, điều luật cụ thể, hoặc quy trình pháp lý mà bạn đang thắc mắc."
-            ),
+        answer = (
+            "Có vẻ yêu cầu của bạn chưa rõ ràng hoặc không nằm trong phạm vi mình xử lý. "
+            "Mình là trợ lý pháp lý hỗ trợ tìm kiếm và giải thích luật. "
+            "Bạn có thể hỏi về các quy định, điều luật cụ thể, hoặc quy trình pháp lý mà bạn đang thắc mắc."
         )
+        _score_outcome("rejected")
+        log_live_turn(query=prompt, normalized_query=normalized_query, action="rejected", answer=answer,
+                      elapsed_ms=(time.perf_counter() - t0) * 1000)
+        return RagChatResponse(action="proceed", normalized_query=normalized_query, answer=answer)
 
     is_situation = req.query_mode == "situation"
     user_for_agent = prompt if is_situation else normalized_query
@@ -146,16 +183,29 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
             elif ev["type"] == "grounding":
                 grounding = ev
     except Exception as e:
-        return RagChatResponse(
-            action="proceed",
-            normalized_query=normalized_query,
-            answer=f"Mình gặp lỗi khi chạy tác tử tìm kiếm: {e}",
-            passages=[],
-        )
+        answer = f"Mình gặp lỗi khi chạy tác tử tìm kiếm: {e}"
+        get_client().update_current_span(level="ERROR", status_message=str(e))
+        _score_outcome("error", is_error=True, is_timeout=_is_timeout_error(e))
+        log_live_turn(query=prompt, normalized_query=normalized_query, action="error", answer=answer,
+                      elapsed_ms=(time.perf_counter() - t0) * 1000, situation_mode=is_situation)
+        return RagChatResponse(action="proceed", normalized_query=normalized_query, answer=answer, passages=[])
 
     raw_response = "".join(answer_parts).strip() or (
         "Mình chưa thể tạo câu trả lời lúc này do lỗi dịch vụ AI. "
         "Bạn vui lòng thử lại sau ít phút."
+    )
+    _score_outcome("proceed")
+
+    log_live_turn(
+        query=prompt, normalized_query=normalized_query, action="proceed", answer=raw_response,
+        retrieved_mapcs=[p.get("mapc") for p in meta.get("passages", []) if p.get("mapc")],
+        grounding_score=grounding.get("grounding_score"),
+        flagged_sentences=grounding.get("flagged_sentences", []),
+        answer_relevance=grounding.get("answer_relevance"),
+        context_relevance=grounding.get("context_relevance"),
+        iterations=meta.get("iterations"),
+        elapsed_ms=(time.perf_counter() - t0) * 1000,
+        situation_mode=is_situation,
     )
 
     return RagChatResponse(
@@ -166,6 +216,8 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
         passages=meta.get("passages", []),
         grounding_score=grounding.get("grounding_score"),
         flagged_sentences=grounding.get("flagged_sentences", []),
+        answer_relevance=grounding.get("answer_relevance"),
+        context_relevance=grounding.get("context_relevance"),
     )
 
 
@@ -179,23 +231,36 @@ def rag_stream(req: RagChatRequest):
       data: {"type":"done"}
       data: {"type":"error", "message":"..."}
     """
+    @observe(name="rag_stream_request")
     def event_stream():
+        t0 = time.perf_counter()
         prompt = req.prompt.strip()
         history_for_processing = [m.model_dump() for m in req.history]
+        # Yield ngay dòng đầu tiên để SSE connection mở và client thấy phản hồi
+        # tức thì — run_pre_retrieve (guardrail) là lệnh gọi đồng bộ, nếu không
+        # có yield nào trước nó thì trình duyệt không nhận được byte nào trong
+        # lúc nó chạy, UI sẽ im lặng.
+        yield f"data: {_json.dumps({'type':'status','text':'🤔 Đang kiểm tra nội dung...'}, ensure_ascii=False)}\n\n"
         decision = run_pre_retrieve(prompt, history_for_processing)
 
         # ── QUICK / SPAM / ESCALATE ───────────────────────────────────────────
         if decision.action in (Action.QUICK_ANSWER, Action.SPAM, Action.ESCALATE):
             if decision.action == Action.QUICK_ANSWER:
                 answer = decision.answer_text or ""
+                outcome = "quick"
             elif decision.action == Action.SPAM:
                 answer = "Xin lỗi, yêu cầu có dấu hiệu spam. Vui lòng cung cấp thông tin cụ thể hơn."
+                outcome = "spam"
             else:
                 answer = "Mình rất tiếc. Bạn có muốn mình chuyển tiếp cho cán bộ xử lý không?"
+                outcome = "escalate"
+            _score_outcome(outcome)
             yield f"data: {_json.dumps({'type':'meta','action':decision.action.value,'passages':[]}, ensure_ascii=False)}\n\n"
             for part in _chunk_stream_text(answer):
                 yield f"data: {_json.dumps({'type':'token','text':part}, ensure_ascii=False)}\n\n"
             yield f"data: {_json.dumps({'type':'done'}, ensure_ascii=False)}\n\n"
+            log_live_turn(query=prompt, normalized_query=None, action=outcome, answer=answer,
+                          elapsed_ms=(time.perf_counter() - t0) * 1000)
             return
 
         # ── PROCEED ───────────────────────────────────────────────────────────
@@ -205,6 +270,7 @@ def rag_stream(req: RagChatRequest):
             else history_for_processing
         )
         latest_history   = base[-10:]
+        yield f"data: {_json.dumps({'type':'status','text':'✍️ Đang chuẩn hoá câu hỏi...'}, ensure_ascii=False)}\n\n"
         normalized_query = rewrite_query_v2(prompt, latest_history) or prompt
 
         intent_result = detect_intent(normalized_query) or "Có"
@@ -217,11 +283,18 @@ def rag_stream(req: RagChatRequest):
             for part in _chunk_stream_text(answer):
                 yield f"data: {_json.dumps({'type':'token','text':part}, ensure_ascii=False)}\n\n"
             yield f"data: {_json.dumps({'type':'done'}, ensure_ascii=False)}\n\n"
+            _score_outcome("rejected")
+            log_live_turn(query=prompt, normalized_query=normalized_query, action="rejected", answer=answer,
+                          elapsed_ms=(time.perf_counter() - t0) * 1000)
             return
 
         is_situation = req.query_mode == "situation"
         user_for_agent = prompt if is_situation else normalized_query
 
+        meta: Dict[str, Any] = {}
+        grounding: Dict[str, Any] = {}
+        answer_parts: List[str] = []
+        error_msg: Optional[str] = None
         try:
             for ev in run_agentic_rag(
                 openai_client=oai_client,
@@ -233,11 +306,38 @@ def rag_stream(req: RagChatRequest):
                 situation_mode=is_situation,
                 rerank_query=normalized_query,
             ):
+                if ev["type"] == "meta":
+                    meta = ev
+                elif ev["type"] == "token":
+                    answer_parts.append(ev["text"])
+                elif ev["type"] == "grounding":
+                    grounding = ev
                 yield f"data: {_json.dumps(ev, ensure_ascii=False)}\n\n"
         except Exception as e:
-            yield f"data: {_json.dumps({'type':'error','message':str(e)}, ensure_ascii=False)}\n\n"
+            error_msg = str(e)
+            get_client().update_current_span(level="ERROR", status_message=error_msg)
+            _score_outcome("error", is_error=True, is_timeout=_is_timeout_error(e))
+            yield f"data: {_json.dumps({'type':'error','message':error_msg}, ensure_ascii=False)}\n\n"
 
         yield f"data: {_json.dumps({'type':'done'}, ensure_ascii=False)}\n\n"
+
+        if error_msg is not None:
+            log_live_turn(query=prompt, normalized_query=normalized_query, action="error", answer=error_msg,
+                          elapsed_ms=(time.perf_counter() - t0) * 1000, situation_mode=is_situation)
+        else:
+            _score_outcome("proceed")
+            log_live_turn(
+                query=prompt, normalized_query=normalized_query, action="proceed",
+                answer="".join(answer_parts).strip(),
+                retrieved_mapcs=[p.get("mapc") for p in meta.get("passages", []) if p.get("mapc")],
+                grounding_score=grounding.get("grounding_score"),
+                flagged_sentences=grounding.get("flagged_sentences", []),
+                answer_relevance=grounding.get("answer_relevance"),
+                context_relevance=grounding.get("context_relevance"),
+                iterations=meta.get("iterations"),
+                elapsed_ms=(time.perf_counter() - t0) * 1000,
+                situation_mode=is_situation,
+            )
 
     return StreamingResponse(
         event_stream(),

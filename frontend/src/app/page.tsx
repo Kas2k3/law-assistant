@@ -61,7 +61,7 @@ async function revealAnswerProgressively(
 }
 
 export default function Home() {
-  const { chats, activeId, loading, error } = useChatStore((s) => s);
+  const { chats, activeId, loading, error, initialized } = useChatStore((s) => s);
   const [search, setSearch]               = useState("");
   const [input, setInput]                 = useState("");
   const [sidebarOpen, setSidebarOpen]     = useState(true);
@@ -81,7 +81,7 @@ export default function Home() {
   const [revealedStreamText, setRevealedStreamText] = useState("");
   /** true trong lúc reveal (kể cả chưa có ký tự nào — hiện bubble chờ). */
   const [postStreamReveal, setPostStreamReveal] = useState(false);
-  const [darkMode, setDarkMode]           = useState(true);
+  const [darkMode, setDarkMode]           = useState(false);
   const [queryMode, setQueryMode]         = useState<"normal" | "situation">("normal");
   const [selectedPassages, setSelectedPassages] = useState<Passage[] | null>(null);
   const [selectedMsgIdx, setSelectedMsgIdx]     = useState<number | null>(null);
@@ -107,6 +107,15 @@ export default function Home() {
   }, [darkMode]);
 
   useEffect(() => { void chatActions.ensureChatsLoaded(); }, []);
+
+  // Phiên mới chưa có đoạn chat nào -> không có activeChat -> onSend() no-op
+  // im lặng (nút gửi/Enter như "không ăn"). Tự tạo 1 đoạn chat mới sau khi
+  // load xong danh sách mà vẫn rỗng.
+  useEffect(() => {
+    if (initialized && !loading && chats.length === 0) {
+      void chatActions.createChat();
+    }
+  }, [initialized, loading, chats.length]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,20 +164,29 @@ export default function Home() {
   async function onSend(e: FormEvent) {
     e.preventDefault();
     const promptSent = input.trim();
-    if (!promptSent || !activeChat) return;
+    if (!promptSent) return;
+
+    // activeChat có thể chưa sẵn sàng (đang load lần đầu, hoặc đoạn chat active
+    // bị mất/lỗi) — tự tạo đoạn chat mới thay vì im lặng bỏ qua (trước đây nút
+    // gửi/Enter trông như "không ăn" trong tình huống này, không có lỗi hiện ra).
+    const chat = activeChat ?? (await chatActions.createChat());
 
     const nextMessages: Message[] = [
-      ...activeChat.messages,
+      ...chat.messages,
       { role: "user", content: promptSent },
     ];
     setInput("");
     setSending(true);
-    setPendingChatId(activeChat._id);
-    setPendingStatus(null);
+    setPendingChatId(chat._id);
+    // Hiện bubble "đang xử lý" NGAY khi bấm gửi — không đợi SSE "status" đầu
+    // tiên từ backend (có thể mất vài giây do guardrail + rewrite query +
+    // bước suy luận đầu tiên của agent trước khi có event nào trả về), tránh
+    // UI im lặng hoàn toàn trong lúc đó.
+    setPendingStatus("🤔 Đang phân tích câu hỏi...");
 
-    await patchChat(activeChat._id, {
+    await patchChat(chat._id, {
       messages: nextMessages,
-      title: autoTitle(nextMessages, activeChat.title),
+      title: autoTitle(nextMessages, chat.title),
     });
 
     let fullText = "";
@@ -208,14 +226,17 @@ export default function Home() {
                 setAgentStep({ cur: evt.iteration, max: evt.max });
             } else if (evt.type === "meta") {
               setPendingStatus(null); setPendingChatId(null); setAgentStep(null);
-              setStreamingChatId(activeChat._id);
+              setStreamingChatId(chat._id);
               metaPassages = evt.passages ?? [];
             } else if (evt.type === "token") {
               fullText += evt.text ?? "";
+              setStreamingChatId(chat._id);
+              setRevealedStreamText(fullText);
             } else if (evt.type === "error") {
               setPendingStatus(null); setPendingChatId(null); setAgentStep(null);
-              setStreamingChatId(activeChat._id);
+              setStreamingChatId(chat._id);
               fullText += `\n\n⚠️ ${evt.message}`;
+              setRevealedStreamText(fullText);
               break;
             } else if (evt.type === "done") {
               break;
@@ -224,22 +245,16 @@ export default function Home() {
         }
       }
 
+      // Token đã hiện dần trong lúc stream (xem nhánh evt.type === "token" ở
+      // trên) — không "tua nhanh" lại từ đầu nữa, chỉ chốt text cuối cùng.
       const answer =
         fullText.trim() ||
         "Mình chưa thể tạo câu trả lời. Vui lòng thử lại.";
 
-      setStreamingChatId(activeChat._id);
-      setRevealedStreamText("");
-      setPostStreamReveal(true);
-      await revealAnswerProgressively(answer, setRevealedStreamText, {
-        charStep: 2,
-        delayMs: 8,
-      });
-      setPostStreamReveal(false);
       setRevealedStreamText("");
       setStreamingChatId(null);
 
-      await patchChat(activeChat._id, {
+      await patchChat(chat._id, {
         messages: [...nextMessages, {
           role: "assistant",
           content: answer,
@@ -249,14 +264,14 @@ export default function Home() {
     } catch (err) {
       console.error("[onSend]", err);
       const errMsg = "Mình gặp lỗi kết nối. Vui lòng thử lại sau.";
-      setStreamingChatId(activeChat._id);
+      setStreamingChatId(chat._id);
       setRevealedStreamText("");
       setPostStreamReveal(true);
       await revealAnswerProgressively(errMsg, setRevealedStreamText, { charStep: 1, delayMs: 11 });
       setPostStreamReveal(false);
       setRevealedStreamText("");
       setStreamingChatId(null);
-      await patchChat(activeChat._id, {
+      await patchChat(chat._id, {
         messages: [...nextMessages, { role: "assistant", content: errMsg, passages: [] }],
       });
     } finally {

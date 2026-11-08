@@ -1,0 +1,286 @@
+{
+  "sample_size": 500,
+  "queries": [
+    "Hành vi chống đối người thi hành công vụ sẽ bị xử phạt như thế nào?",
+    "Quyền và nghĩa vụ cơ bản của thanh niên theo pháp luật được quy định như thế nào?",
+    "Chính sách hỗ trợ phát triển kinh tế – xã hội đối với vùng dân tộc thiểu số được quy định ra sao?",
+    "Người nghiện ma túy bị áp dụng biện pháp cai nghiện bắt buộc trong trường hợp nào?",
+    "Người bị tạm giữ có những quyền gì theo quy định pháp luật?"
+  ],
+  "results": {
+    "text-embedding-3-small": [
+      [
+        {
+          "mapc": "39013000000000002000000400000000000000000017000000000000000000402488001270002200",
+          "tendieu": "Điều 39.13.NĐ.16.22. Thủ tục xử phạt, thi hành quyết định xử phạt",
+          "score": 0.5541100192295519
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000033000000000000000000402718200150000700",
+          "tendieu": "Điều 39.13.NĐ.76.7. Vi phạm các quy định về hợp đồng cung ứng và sử dụng dịch vụ bưu chính",
+          "score": 0.534463768106169
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000039000000000000000000402710100880004800",
+          "tendieu": "Điều 39.13.NĐ.73.48. Vi phạm quy định về cản trở việc thanh tra, không thực hiện yêu cầu của người có thẩm quyền",
+          "score": 0.5321210179521892
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000021000000000000000000402753600040001400",
+          "tendieu": "Điều 39.13.NĐ.89.14. Vi phạm quy định về thi",
+          "score": 0.5312245067351923
+        },
+        {
+          "mapc": "16001000000000002000021000000000000000000030000000000000000031200000000000000000",
+          "tendieu": "Điều 16.1.LQ.312. Tội vi phạm quy định về quản lý chất cháy, chất độc",
+          "score": 0.5263654127550708
+        }
+      ],
+      [
+        {
+          "mapc": "3900300000000000100000300000000000000000",
+          "tendieu": "Điều 39.3.LQ.3. Quyền tự do cư trú của công dân",
+          "score": 0.507430531743279
+        },
+        {
+          "mapc": "090010000000000010000005000000000000000010000000000000000000",
+          "tendieu": "Điều 9.1.LQ.100. Trách nhiệm về nghĩa vụ dân sự của Nhà nước Cộng hòa xã hội chủ nghĩa Việt Nam, cơ quan nhà nước ở trung ương, ở địa phương trong quan hệ dân sự với một bên là nhà nước, pháp nhân, cá nhân nước ngoài",
+          "score": 0.5054484640151214
+        },
+        {
+          "mapc": "390030000000000050000340000000000000000000402506500310000400",
+          "tendieu": "Điều 39.3.NĐ.1.4. Trách nhiệm của các Bộ, ngành, Ủy ban nhân dân các cấp và công dân trong việc thực hiện các quy định về hộ khẩu",
+          "score": 0.5045041335571502
+        },
+        {
+          "mapc": "3000200000000000100000000000000000000000",
+          "tendieu": "Điều 30.2.LQ.1. Phạm vi điều chỉnh",
+          "score": 0.49799507652873576
+        },
+        {
+          "mapc": "0400600000000000300002300000000000000000",
+          "tendieu": "Điều 4.6.NĐ.23. Quyền và nghĩa vụ của người thực hiện tư vấn pháp luật",
+          "score": 0.49208775418240314
+        }
+      ],
+      [
+        {
+          "mapc": "060050000000000040000470000000000000000000402787801310018100",
+          "tendieu": "Điều 6.5.NĐ.2.181. Nội dung sử dụng Quỹ Đền ơn đáp nghĩa",
+          "score": 0.5804385984668923
+        },
+        {
+          "mapc": "0600100000000000200001000000000000000000",
+          "tendieu": "Điều 6.1.NĐ.10. Trợ giúp giáo dục, đào tạo và dạy nghề",
+          "score": 0.5408201780072097
+        },
+        {
+          "mapc": "0300300000000000100000500000000000000000",
+          "tendieu": "Điều 3.3.LQ.5. Chính sách của Nhà nước về ứng dụng và phát triển công nghệ thông tin",
+          "score": 0.5339573170124327
+        },
+        {
+          "mapc": "0600500000000000700005880280870055000280",
+          "tendieu": "Điều 6.5.TT.3.28. Điều khoản chuyển tiếp",
+          "score": 0.5214143922060407
+        },
+        {
+          "mapc": "120030000000000010000060000000000000000000802846400520000300",
+          "tendieu": "Điều 12.3.TT.17.3. Nguồn kinh phí thực hiện",
+          "score": 0.5001060252642984
+        }
+      ],
+      [
+        {
+          "mapc": "16001000000000002000021000000000000000000030000000000000000031200000000000000000",
+          "tendieu": "Điều 16.1.LQ.312. Tội vi phạm quy định về quản lý chất cháy, chất độc",
+          "score": 0.5489434004290558
+        },
+        {
+          "mapc": "39013000000000003000000200000000000000001010000000000000000000402787901400002700",
+          "tendieu": "Điều 39.13.NĐ.100.27. Hồ sơ, thủ tục đề nghị áp dụng biện pháp đưa vào cơ sở giáo dục bắt buộc",
+          "score": 0.504305519290059
+        },
+        {
+          "mapc": "160010000000000020000130000000000000000010800000000000000000",
+          "tendieu": "Điều 16.1.LQ.108. Tội phản bội Tổ quốc",
+          "score": 0.491799445455014
+        },
+        {
+          "mapc": "400010000000000050000580000000000000000000802464500010002000",
+          "tendieu": "Điều 40.1.TL.1.20. Thực hiện chế độ đối với người đang chấp hành án phạt tù được chuyển giao về Việt Nam",
+          "score": 0.47718349965470935
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000017000000000000000000402488001270002200",
+          "tendieu": "Điều 39.13.NĐ.16.22. Thủ tục xử phạt, thi hành quyết định xử phạt",
+          "score": 0.4740259646798942
+        }
+      ],
+      [
+        {
+          "mapc": "370100000000000030000220000000000000000000402636301200001200",
+          "tendieu": "Điều 37.10.NĐ.1.12. Việc thăm gặp người bị tạm giữ, người bị tạm giam là người nước ngoài",
+          "score": 0.6073879775541298
+        },
+        {
+          "mapc": "370100000000000090000020000000000000000005700000000000000000",
+          "tendieu": "Điều 37.10.LQ.57. Quyền và nghĩa vụ của người tố cáo trong quản lý, thi hành tạm giữ, tạm giam",
+          "score": 0.5733281746291818
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000032000000000000000000402490901730001900",
+          "tendieu": "Điều 39.13.NĐ.32.19. Thẩm quyền xử phạt vi phạm hành chính của Công an nhân dân, Bộ đội biên phòng, Cảnh sát biển, Hải quan, Kiểm lâm, Cơ quan thuế, Quản lý thị trường, Cảng vụ hàng hải, Cảng vụ hàng không, Cảng vụ đường thủy nội địa, Thanh tra chuyên ngành khác",
+          "score": 0.5731641868741567
+        },
+        {
+          "mapc": "370100000000000010000050000000000000000000802644100010001900",
+          "tendieu": "Điều 37.10.TL.1.19. Phối hợp thực hiện các yêu cầu, kiến nghị, kháng nghị, quyết định của Viện kiểm sát trong quản lý, thi hành tạm giữ, tạm giam",
+          "score": 0.5720628818626322
+        },
+        {
+          "mapc": "3701000000000000100000280264850023000020",
+          "tendieu": "Điều 37.10.TT.4.2. Đối tượng áp dụng",
+          "score": 0.5656687667003603
+        }
+      ]
+    ],
+    "bge-m3": [
+      [
+        {
+          "mapc": "39013000000000002000000400000000000000000039000000000000000000402710100880004800",
+          "tendieu": "Điều 39.13.NĐ.73.48. Vi phạm quy định về cản trở việc thanh tra, không thực hiện yêu cầu của người có thẩm quyền",
+          "score": 0.6086402535438538
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000021000000000000000000402753600040001400",
+          "tendieu": "Điều 39.13.NĐ.89.14. Vi phạm quy định về thi",
+          "score": 0.6064903736114502
+        },
+        {
+          "mapc": "380010000000000080000002000000000000000006500000000000000000",
+          "tendieu": "Điều 38.1.LQ.65. Xử lý cán bộ, công chức vi phạm pháp luật về tín ngưỡng, tôn giáo khi thi hành công vụ",
+          "score": 0.6060108542442322
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000004000000000000000000402789600120005500",
+          "tendieu": "Điều 39.13.NĐ.104.55. Thẩm quyền xử phạt của Chỉ huy trưởng Bộ đội biên phòng cấp tỉnh; Hải đoàn trưởng Hải đoàn biên phòng, Cục trưởng Cục Phòng chống ma túy và tội phạm thuộc Bộ Tư lệnh Bộ đội biên phòng",
+          "score": 0.5685274600982666
+        },
+        {
+          "mapc": "39013000000000002000000400000000000000000013000000000000000000402734500820005200",
+          "tendieu": "Điều 39.13.NĐ.81.52. Hành vi vi phạm quy định về người thực hiện trợ giúp pháp lý",
+          "score": 0.5630597472190857
+        }
+      ],
+      [
+        {
+          "mapc": "0500200000000000200000200000000000000000",
+          "tendieu": "Mục 2",
+          "score": 0.501618504524231
+        },
+        {
+          "mapc": "44013000000000002000002000000000000000000230000000000000000000402847200610001700",
+          "tendieu": "Điều 44.13.NĐ.2.17. Trách nhiệm của hộ gia đình, công dân cư trú tại cộng đồng dân cư trong xây dựng và thực hiện hương ước, quy ước",
+          "score": 0.5012809634208679
+        },
+        {
+          "mapc": "080010000000000030000460000000000000000000802622700090001900",
+          "tendieu": "Điều 8.1.TT.2.19. Trách nhiệm của Sở Thông tin và Truyền thông các tỉnh, thành phố trực thuộc Trung ương",
+          "score": 0.498473197221756
+        },
+        {
+          "mapc": "360050000000000020000070000000000000000000402360700450003700",
+          "tendieu": "Điều 36.5.NĐ.1.37. Nhiệm vụ quản lý nhà nước của Bộ, cơ quan ngang Bộ đối  với hội hoạt động thuộc lĩnh vực do Bộ, cơ quan ngang Bộ quản lý trong phạm vi cả nước",
+          "score": 0.4862664043903351
+        },
+        {
+          "mapc": "3901400000000000200000900000000000000000",
+          "tendieu": "Điều 39.14.LQ.9. Nhiệm vụ của Cảnh sát cơ động",
+          "score": 0.48485755920410156
+        }
+      ],
+      [
+        {
+          "mapc": "1300100000000000100000140236920082000010",
+          "tendieu": "Điều 13.1.NĐ.2.1. Phạm vi điều chỉnh",
+          "score": 0.5682926774024963
+        },
+        {
+          "mapc": "120030000000000010000060000000000000000000802846400520000300",
+          "tendieu": "Điều 12.3.TT.17.3. Nguồn kinh phí thực hiện",
+          "score": 0.5132286548614502
+        },
+        {
+          "mapc": "240090000000000047500024020226102500000000802000100614500200",
+          "tendieu": "Điều 24.9.TT.1.2. Nội dung qui hoạch phát triển trang trại",
+          "score": 0.510826826095581
+        },
+        {
+          "mapc": "0600100000000000200001000000000000000000",
+          "tendieu": "Điều 6.1.NĐ.10. Trợ giúp giáo dục, đào tạo và dạy nghề",
+          "score": 0.5074561834335327
+        },
+        {
+          "mapc": "24010000000000002000003000000000000000000300000000000000000000402770100660001600",
+          "tendieu": "Điều 24.10.NĐ.4.16. Nhu cầu cứu trợ, hỗ trợ khắc phục hậu quả thiên tai",
+          "score": 0.5069955587387085
+        }
+      ],
+      [
+        {
+          "mapc": "3900700000000000800005540278560109000090",
+          "tendieu": "Điều 39.7.NĐ.5.9. Tổ chức thực hiện",
+          "score": 0.6070681810379028
+        },
+        {
+          "mapc": "39013000000000003000000200000000000000001010000000000000000000402787901400002700",
+          "tendieu": "Điều 39.13.NĐ.100.27. Hồ sơ, thủ tục đề nghị áp dụng biện pháp đưa vào cơ sở giáo dục bắt buộc",
+          "score": 0.569348931312561
+        },
+        {
+          "mapc": "39013000000000003000000300000000000000001060000000000000000000202822600030002800",
+          "tendieu": "Điều 39.13.PL.3.28. Giảm thời hạn, tạm đình chỉ hoặc miễn chấp hành phần thời gian áp dụng biện pháp xử lý hành chính còn lại",
+          "score": 0.5042281150817871
+        },
+        {
+          "mapc": "4500400000000000100000180264160052000020",
+          "tendieu": "Điều 45.4.TT.17.2. Đối tượng áp dụng",
+          "score": 0.49421900510787964
+        },
+        {
+          "mapc": "390070000000000030000190000000000000000000402785201050002400",
+          "tendieu": "Điều 39.7.NĐ.4.24. Kiểm soát hoạt động nghiên cứu, giám định, sản xuất chất ma túy, tiền chất vì mục đích quốc phòng, an ninh",
+          "score": 0.48431485891342163
+        }
+      ],
+      [
+        {
+          "mapc": "370100000000000090000020000000000000000005700000000000000000",
+          "tendieu": "Điều 37.10.LQ.57. Quyền và nghĩa vụ của người tố cáo trong quản lý, thi hành tạm giữ, tạm giam",
+          "score": 0.7159108519554138
+        },
+        {
+          "mapc": "370100000000000030000220000000000000000000402636301200001200",
+          "tendieu": "Điều 37.10.NĐ.1.12. Việc thăm gặp người bị tạm giữ, người bị tạm giam là người nước ngoài",
+          "score": 0.6303714513778687
+        },
+        {
+          "mapc": "370100000000000010000050000000000000000000802644100010001900",
+          "tendieu": "Điều 37.10.TL.1.19. Phối hợp thực hiện các yêu cầu, kiến nghị, kháng nghị, quyết định của Viện kiểm sát trong quản lý, thi hành tạm giữ, tạm giam",
+          "score": 0.6259474754333496
+        },
+        {
+          "mapc": "3701000000000000100000280264850023000020",
+          "tendieu": "Điều 37.10.TT.4.2. Đối tượng áp dụng",
+          "score": 0.6062558889389038
+        },
+        {
+          "mapc": "400010000000000050000580000000000000000000802464500010002000",
+          "tendieu": "Điều 40.1.TL.1.20. Thực hiện chế độ đối với người đang chấp hành án phạt tù được chuyển giao về Việt Nam",
+          "score": 0.5877094268798828
+        }
+      ]
+    ]
+  }
+}

@@ -268,6 +268,11 @@ _CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".cache")
 _VECTOR_CACHE_PATH = os.path.join(_CACHE_DIR, "vector_search_cache.sqlite")
 _CACHE_ENABLED = os.getenv("RAG_CACHE_ENABLED", "1").strip().lower() in ("1", "true", "yes")
 
+# Hệ số lấy dư raw hit Milvus trước khi dedup theo mapc (xem _vector_search_uncached) —
+# cần > 1 vì mỗi điều luật dài giờ chunk thành nhiều vector cùng mapc.
+VECTOR_SEARCH_RAW_OVERSAMPLE = int(os.getenv("RAG_VECTOR_RAW_OVERSAMPLE", "4"))
+VECTOR_SEARCH_RAW_LIMIT_CAP = int(os.getenv("RAG_VECTOR_RAW_LIMIT_CAP", "200"))
+
 
 def _vector_cache_get(key: str):
     if not _CACHE_ENABLED:
@@ -357,27 +362,35 @@ class GraphRAGRetriever:
  
     # ── Stage 1: Milvus vector search ────────────────────────────────────────
  
-    def _vector_search(self, query: str, top_k: int) -> list[str]:
-        """Trả về list mapc của các Dieu gần nhất về ngữ nghĩa.
+    def _vector_search(self, query: str, top_k: int) -> list[dict]:
+        """Trả về list {"mapc", "matched_chunk"} của các Dieu gần nhất về ngữ
+        nghĩa — `matched_chunk` là ĐÚNG đoạn chunk (không phải cả điều) đã khớp
+        trong Milvus, dùng để rerank bám sát đoạn thật sự liên quan thay vì pha
+        loãng với toàn bộ nội dung điều (xem rerank_phapdien_hits).
         Kết quả được cache theo (query, top_k) để tránh gọi lại OpenAI embedding
         khi cùng một câu hỏi lặp lại (vd: khi chạy đánh giá hoặc người dùng hỏi lại)."""
-        cache_key = f"{query.strip().lower()}::{top_k}"
+        cache_key = f"v2::{query.strip().lower()}::{top_k}"
         cached = _vector_cache_get(cache_key)
         if cached is not None:
             return cached
 
-        mapcs = self._vector_search_uncached(query, top_k)
-        _vector_cache_set(cache_key, mapcs)
-        return mapcs
+        hits = self._vector_search_uncached(query, top_k)
+        _vector_cache_set(cache_key, hits)
+        return hits
 
-    def _vector_search_uncached(self, query: str, top_k: int) -> list[str]:
+    def _vector_search_uncached(self, query: str, top_k: int) -> list[dict]:
         try:
             vec = self._embed(query)
+            # Điều luật dài giờ được chunk thành nhiều vector cùng `mapc`
+            # (data_processing/seed_data_batch.py) nên 1 điều có thể chiếm nhiều
+            # raw hit. Lấy dư raw hit rồi dedup theo mapc bên dưới để vẫn trả về
+            # đủ top_k điều PHÂN BIỆT.
+            raw_limit = min(top_k * VECTOR_SEARCH_RAW_OVERSAMPLE, VECTOR_SEARCH_RAW_LIMIT_CAP)
             results = self.collection.search(
                 data=[vec],
                 anns_field="embedding",
                 param={"metric_type": "COSINE", "params": {"ef": 128}},
-                limit=top_k,
+                limit=raw_limit,
                 output_fields=["metadata"],
             )
         except Exception as e:
@@ -388,7 +401,8 @@ class GraphRAGRetriever:
             print("[GraphRAG] Milvus trả về rỗng")
             return []
 
-        mapcs = []
+        hits_out = []
+        seen_mapc = set()
         for hit in results[0]:
             try:
                 meta = hit.entity.get("metadata") or {}
@@ -403,13 +417,18 @@ class GraphRAGRetriever:
                     meta = {}
 
             mapc = meta.get("mapc") or (meta.get("tendieu") or "").split(".")[0]
-            if mapc:
-                mapcs.append(mapc)
+            if mapc and mapc not in seen_mapc:
+                seen_mapc.add(mapc)
+                # metadata["noidung"] ở đây là nội dung CHUNK này (không phải cả
+                # điều) — xem data_processing/seed_data_batch.py::build_metadata.
+                hits_out.append({"mapc": mapc, "matched_chunk": meta.get("noidung") or ""})
+            if len(hits_out) >= top_k:
+                break
 
-        print(f"[GraphRAG] _vector_search raw hits: {len(results[0])}, mapcs tìm được: {len(mapcs)}")
+        print(f"[GraphRAG] _vector_search raw hits: {len(results[0])}, mapcs phân biệt: {len(hits_out)}")
 
         # Nếu không lấy được mapc nào, in debug để kiểm tra cấu trúc metadata
-        if not mapcs and results[0]:
+        if not hits_out and results[0]:
             sample = results[0][0]
             try:
                 print(f"[DEBUG] Sample entity fields: {sample.entity.fields}")
@@ -417,7 +436,7 @@ class GraphRAGRetriever:
             except Exception as e:
                 print(f"[DEBUG] Không đọc được entity: {e}")
 
-        return mapcs
+        return hits_out
  
     # ── Stage 2: Graph expansion ──────────────────────────────────────────────
  
@@ -502,7 +521,12 @@ class GraphRAGRetriever:
         if not deduped:
             return []
 
-        texts = [((c.get("ten") or "") + " " + (c.get("noidung") or "")) for c in deduped]
+        # Ưu tiên so khớp với đoạn chunk THỰC SỰ đã khớp lúc vector_search
+        # (c["rerank_text"], xem rerank_phapdien_hits) thay vì cả điều luật —
+        # tránh pha loãng tín hiệu relevance khi điều dài nhiều chunk mà chỉ 1
+        # đoạn liên quan. Candidate không có rerank_text (vd từ graph_traverse,
+        # không xuất phát từ 1 chunk cụ thể) vẫn fallback về noidung như cũ.
+        texts = [((c.get("ten") or "") + " " + (c.get("rerank_text") or c.get("noidung") or "")) for c in deduped]
         bm25_norm = _bm25_scores_normalized(query, texts)
         semantic_scores = _semantic_scores(query, texts)
 
@@ -526,7 +550,8 @@ class GraphRAGRetriever:
             print(f"[GraphRAG] Phát hiện query thực tế: '{realtime_query}'")
 
         # Stage 1–3: Graph RAG với legal_query
-        seed_mapcs = self._vector_search(legal_query, top_k=seed_k)
+        seed_hits = self._vector_search(legal_query, top_k=seed_k)
+        seed_mapcs = [h["mapc"] for h in seed_hits]
         print(f"[GraphRAG] Seeds: {len(seed_mapcs)}")
 
         candidates = self._graph_expand(seed_mapcs, hop=hop)

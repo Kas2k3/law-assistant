@@ -59,6 +59,26 @@ tmp_pip_cache/
 tmp_npm_cache/
 tmp_dir/
 
+# run.sh: log + pid của các tiến trình app (backend/frontend/dashboard)
+/logs/
+/.run/
+
+# Checkpoint resume của seed_data_batch.py (chunking ingest)
+data_processing/.seed_checkpoint.json
+data_processing/.seed_checkpoint_bge.json
+data_processing/embed_errors_bge.csv
+
+# Tiến trình realtime của run_evaluation.py, đọc bởi evaluation/visualization.py
+evaluation/results/_live_progress.json
+evaluation/results/_live_progress_bge.json
+
+# Log mọi câu hỏi thật qua chat UI (evaluation/live_log.py) — dữ liệu runtime, không commit
+evaluation/results/live_chat_log.jsonl
+
+# Export toàn bộ chunk dataset (data_processing/export_and_evaluate_chunks.py) —
+# file rất lớn (~200MB, sinh lại được bất cứ lúc nào từ MySQL), không commit
+evaluation/results/chunk_dataset_export.json
+
 # Cache truy xuất vector_search (sqlitedict) — dữ liệu cục bộ, không commit
 retrieve/.cache/
 

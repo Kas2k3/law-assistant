@@ -1,5 +1,6 @@
 import re
 from typing import Any, Dict, List, Optional
+from langfuse import observe
 from .agents_manager import AgentsManager
 from .types import Decision, Action
 
@@ -10,6 +11,7 @@ def normalize(text: str) -> str:
     t = re.sub(r"\s+", " ", t)
     return t
 
+@observe(name="pre_retrieve", capture_output=False)
 def run_pre_retrieve(prompt: str, history: Optional[List[Any]] = None) -> Decision:
     """
     Chạy tầng pre-retrieve để xác định hướng xử lý trước khi gửi vào RAG.

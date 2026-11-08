@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`dark ${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
