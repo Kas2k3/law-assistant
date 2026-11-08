@@ -2,7 +2,7 @@
 import os, re, unicodedata
 from dotenv import load_dotenv
 from datetime import datetime
-from openai import OpenAI
+from langfuse.openai import OpenAI  # drop-in thay cho `from openai import OpenAI` — tự trace generation (token/cost) lên Langfuse
 import asyncio
 import json
 

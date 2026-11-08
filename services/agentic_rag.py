@@ -8,6 +8,8 @@ import os
 import re
 from typing import Any
 
+from langfuse import get_client, observe
+
 # Giới hạn nội dung đưa vào prompt tool (UI bucket giữ full)
 LLM_MAX_NOIDUNG_CHARS = int(os.getenv("AGENT_LLM_MAX_NOIDUNG_CHARS", "4000"))
 LLM_MAX_PASSAGE_CHARS = int(os.getenv("AGENT_LLM_MAX_PASSAGE_CHARS", "4000"))
@@ -244,6 +246,9 @@ def rerank_phapdien_hits(
                 "mapc": h.get("mapc"),
                 "ten": h.get("ten") or "",
                 "noidung": (h.get("noidung") or "")[:12000],
+                # Chunk đã khớp lúc vector_search (nếu có) — _rerank ưu tiên
+                # field này để tính BM25/semantic, tránh pha loãng với full điều.
+                "rerank_text": h.get("matched_chunk") or "",
                 "passage": (h.get("passage") or "")[:12000],
                 "tenchuong": h.get("tenchuong"),
                 "tendemuc": h.get("tendemuc"),
@@ -294,6 +299,10 @@ def row_to_full_hit(row: dict[str, Any], *, score: float, source: str = "phapdie
         "tendemuc": row.get("tendemuc"),
         "tenchude": row.get("tenchude"),
         "noidung": row.get("noidung") or "",
+        # Đoạn chunk thực sự đã khớp lúc vector_search (nếu có) — chỉ dùng để
+        # rerank bám sát đoạn liên quan (xem rerank_phapdien_hits/_rerank),
+        # KHÔNG hiển thị cho người dùng/LLM (noidung ở trên vẫn là full điều).
+        "matched_chunk": row.get("matched_chunk") or "",
         "passage": build_passage_text(row),
         "score": score,
         "source": source,
@@ -424,6 +433,10 @@ def assistant_message_to_dict(msg: Any) -> dict[str, Any]:
     return out
 
 
+_RETRIEVAL_TOOLS = {"vector_search", "graph_traverse", "web_search", "get_full_article"}
+
+
+@observe(name="agent_tool", as_type="tool")
 def execute_agent_tool(
     name: str,
     args: dict[str, Any],
@@ -433,11 +446,41 @@ def execute_agent_tool(
     rerank_query: str = "",
 ) -> tuple[str, list[dict[str, Any]]]:
     """
-  Thực thi tool.
+  Thực thi tool + gắn score lên Langfuse (Agent Quality / Retrieval dashboard):
+    - tool_success (BOOLEAN): tool có trả lỗi không
+    - retrieval_empty (BOOLEAN): tool truy xuất (vector/graph/web/full_article)
+      có trả về 0 kết quả không — dùng để tính "empty retrieval rate"
   Returns:
     - JSON rút gọn cho LLM (tool message)
     - full hits cho bucket UI
     """
+    get_client().update_current_span(name=f"tool:{name}", input=args)
+    result_json, full_hits = _execute_agent_tool_impl(
+        name, args, retriever=retriever, neo4j_driver=neo4j_driver, rerank_query=rerank_query,
+    )
+
+    is_error = '"error"' in result_json[:200] if isinstance(result_json, str) else False
+    client = get_client()
+    client.score_current_span(name="tool_success", value=0 if is_error else 1, data_type="BOOLEAN")
+    if name in _RETRIEVAL_TOOLS:
+        client.score_current_span(
+            name="retrieval_empty", value=1 if not full_hits else 0, data_type="BOOLEAN",
+        )
+        client.update_current_span(metadata={"result_count": len(full_hits)})
+
+    return result_json, full_hits
+
+
+def _execute_agent_tool_impl(
+    name: str,
+    args: dict[str, Any],
+    *,
+    retriever: Any,
+    neo4j_driver: Any,
+    rerank_query: str = "",
+) -> tuple[str, list[dict[str, Any]]]:
+    """Logic thực thi tool thuần (không lo tracing) — tách riêng để
+    execute_agent_tool() bọc ngoài chấm score mà không phải sửa từng return."""
     args = args or {}
     empty: list[dict[str, Any]] = []
     try:
@@ -448,11 +491,17 @@ def execute_agent_tool(
                 return json.dumps([], ensure_ascii=False), empty
 
             pool_k = min(max(top_k * AGENT_VECTOR_POOL_MULT, top_k), 40)
-            mapcs = retriever._vector_search(q, top_k=pool_k)
-            if not mapcs:
+            vector_hits = retriever._vector_search(q, top_k=pool_k)
+            if not vector_hits:
                 return json.dumps([], ensure_ascii=False), empty
 
+            mapcs = [h["mapc"] for h in vector_hits]
+            # Chunk thực sự đã khớp lúc vector_search (không phải cả điều) —
+            # gắn vào từng row để rerank bám sát đoạn liên quan (xem _rerank).
+            mapc_to_chunk = {h["mapc"]: h.get("matched_chunk") or "" for h in vector_hits}
             rows = fetch_dieu_records(neo4j_driver, mapcs)
+            for r in rows:
+                r["matched_chunk"] = mapc_to_chunk.get(r.get("mapc"), "")
             full_hits = [row_to_full_hit(r, score=0.8) for r in rows]
             rq = (rerank_query or "").strip() or q
             full_hits = rerank_phapdien_hits(retriever, rq, full_hits, top_k=top_k)
@@ -681,6 +730,85 @@ def check_answer_grounding(answer: str, passages: list[dict[str, Any]]) -> dict[
     return {"grounding_score": round(grounding_score, 4), "flagged_sentences": flagged}
 
 
+def check_rag_quality_extra(query: str, answer: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
+    """2 chỉ số kiểu RAGAS bổ sung cho grounding/faithfulness ở trên — cả 2 đều
+    KHÔNG cần đáp án mẫu (gold_response), dùng embedding cục bộ (miễn phí):
+
+    - answer_relevance: câu trả lời có thực sự đúng trọng tâm câu hỏi không
+      (so embedding câu hỏi vs câu trả lời) — bắt lỗi trả lời lạc đề/chung chung.
+    - context_relevance: các đoạn đã retrieve có liên quan tới câu hỏi không
+      (so embedding câu hỏi vs từng passage) — đo chất lượng retrieval mà không
+      cần biết trước "điều luật đúng" là gì.
+
+    Trả về {"answer_relevance": 0..1 | None, "context_relevance": 0..1 | None}.
+    """
+    out: dict[str, Any] = {"answer_relevance": None, "context_relevance": None}
+    query = (query or "").strip()
+    answer = (answer or "").strip()
+    context_texts = [str(p.get("noidung") or p.get("passage") or "") for p in passages]
+    context_texts = [t for t in context_texts if t.strip()]
+    if not query:
+        return out
+
+    try:
+        from services.local_embeddings import get_local_embedder
+        model = get_local_embedder()
+        from sentence_transformers import util as st_util
+
+        q_emb = model.encode([query], convert_to_tensor=True)
+        if answer:
+            a_emb = model.encode([answer], convert_to_tensor=True)
+            out["answer_relevance"] = round(float(st_util.cos_sim(q_emb, a_emb)[0][0]), 4)
+        if context_texts:
+            ctx_emb = model.encode(context_texts, convert_to_tensor=True)
+            out["context_relevance"] = round(float(st_util.cos_sim(q_emb, ctx_emb)[0].mean()), 4)
+    except Exception:
+        pass
+    return out
+
+
+def _emit_request_quality_scores(
+    *,
+    query: str,
+    answer: str,
+    passages: list[dict[str, Any]],
+    openai_client: Any,
+    is_fallback: bool,
+) -> dict[str, Any]:
+    """Tính các chỉ số chất lượng (grounding + 2 chỉ số RAGAS ở trên) và đẩy lên
+    Langfuse dưới dạng score của TRACE hiện tại — dùng cho Dashboard "RAG
+    Quality" (faithfulness/answer_relevancy/context_precision), "User
+    Experience" (fallback rate) và "Retrieval" (empty_retrieval rate) + thử
+    kiểm duyệt câu trả lời (Safety: unsafe_output) qua OpenAI Moderation (miễn
+    phí, không tính vào chi phí LLM). KHÔNG đổi schema event 'grounding' cũ —
+    chỉ thêm side-effect gọi Langfuse.
+    """
+    grounding = check_answer_grounding(answer, passages)
+    extra = check_rag_quality_extra(query, answer, passages)
+    result = {**grounding, **extra}
+
+    client = get_client()
+    if grounding.get("grounding_score") is not None:
+        client.score_current_trace(name="faithfulness", value=grounding["grounding_score"], data_type="NUMERIC")
+    if extra.get("answer_relevance") is not None:
+        client.score_current_trace(name="answer_relevancy", value=extra["answer_relevance"], data_type="NUMERIC")
+    if extra.get("context_relevance") is not None:
+        client.score_current_trace(name="context_precision", value=extra["context_relevance"], data_type="NUMERIC")
+
+    client.score_current_trace(name="fallback", value=1 if is_fallback else 0, data_type="BOOLEAN")
+    client.score_current_trace(name="empty_retrieval", value=0 if passages else 1, data_type="BOOLEAN")
+
+    if answer.strip():
+        try:
+            mod = openai_client.moderations.create(model="omni-moderation-latest", input=answer[:4000])
+            flagged = bool(mod.results[0].flagged)
+            client.score_current_trace(name="unsafe_output", value=1 if flagged else 0, data_type="BOOLEAN")
+        except Exception:
+            pass
+
+    return result
+
+
 # ── SSE / response shaping (dùng chung bởi run_agentic_rag, trước nằm trùng lặp
 #    trong rag_api.py ở cả /rag/chat và /rag/stream) ────────────────────────────
 def _web_sources_markdown(web_sources: list[dict[str, str]]) -> str:
@@ -786,6 +914,7 @@ def _build_meta_event(
     return event, web_sources
 
 
+@observe(name="agentic_rag")
 def run_agentic_rag(
     *,
     openai_client: Any,
@@ -805,6 +934,9 @@ def run_agentic_rag(
       {"type": "meta", "action", "normalized_query", "passages", "sources", "iterations", "agentic"}
       {"type": "token", "text"}
     """
+    get_client().set_current_trace_io(
+        input={"user_prompt": user_prompt, "normalized_query": normalized_query, "situation_mode": situation_mode},
+    )
     rerank_ctx = (rerank_query if rerank_query is not None else user_prompt) or ""
     model = agent_chat_model()
     system_prompt = agent_system_prompt(situation_mode=situation_mode)
@@ -816,6 +948,15 @@ def run_agentic_rag(
     bucket: list[dict[str, Any]] = []
 
     for iteration in range(max_iterations):
+        # Bước model quyết định có cần gọi tool hay trả lời luôn — thường là
+        # bước chậm nhất trong vòng lặp, trước đây KHÔNG có status nào báo cho
+        # UI (chỉ báo khi đã quyết định gọi tool) khiến UI im lặng ngay lúc này.
+        yield {
+            "type": "status",
+            "text": "🧠 Đang suy luận bước tiếp theo..." if iteration > 0 else "🧠 Đang suy luận...",
+            "iteration": iteration + 1,
+            "max": max_iterations,
+        }
         response = openai_client.chat.completions.create(
             model=model,
             messages=messages,
@@ -854,7 +995,14 @@ def run_agentic_rag(
 
             if web_sources:
                 yield {"type": "token", "text": _web_sources_markdown(web_sources)}
-            yield {"type": "grounding", **check_answer_grounding("".join(full_answer_parts), meta_event["passages"])}
+            final_answer = "".join(full_answer_parts)
+            yield {
+                "type": "grounding",
+                **_emit_request_quality_scores(
+                    query=user_prompt, answer=final_answer, passages=meta_event["passages"],
+                    openai_client=openai_client, is_fallback=False,
+                ),
+            }
             return
 
         for tc in msg.tool_calls:
@@ -906,4 +1054,11 @@ def run_agentic_rag(
 
     if web_sources:
         yield {"type": "token", "text": _web_sources_markdown(web_sources)}
-    yield {"type": "grounding", **check_answer_grounding("".join(full_answer_parts), meta_event["passages"])}
+    final_answer = "".join(full_answer_parts)
+    yield {
+        "type": "grounding",
+        **_emit_request_quality_scores(
+            query=user_prompt, answer=final_answer, passages=meta_event["passages"],
+            openai_client=openai_client, is_fallback=True,
+        ),
+    }
