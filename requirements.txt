@@ -8,12 +8,17 @@ faiss-cpu==1.15.1
 sentence-transformers==6.1.0
 sqlitedict==2.1.0
 openai==3.35.1
-torch==2.14.1
+# torch: KHÔNG cài qua dòng này — bản mặc định trên PyPI kéo theo toàn bộ
+# nvidia-cuda-*/nvidia-cudnn-* (vài GB) dù project chỉ chạy CPU (rerank cục bộ +
+# sentiment/spam agent). Cài trước bằng:
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+# rồi mới `pip install -r requirements.txt` — pip sẽ thấy torch đã thoả và bỏ qua.
 sentencepiece==0.2.2
 # huggingface_hub
 # vllm
 langchain==0.3.30
 langchain_community==0.3.31
+langchain_text_splitters==0.3.11
 pymilvus==2.4.15
 setuptools==80.10.2  # pymilvus 2.4.x dùng pkg_resources (cần Python 3.12 venv, không có sẵn setuptools)
 scikit-learn==1.5.2
@@ -25,7 +30,9 @@ markdown==3.11.1
 pymongo==4.19.0
 
 neo4j==6.4.1
-pymysql==2.2.8  # MySQL fallback (get_full_article, build_graph.py, seed_data_batch.py)
+pymysql==1.1.3  # MySQL fallback (get_full_article, build_graph.py, seed_data_batch.py)
+tiktoken==0.14.0  # đếm token để chunking trong seed_data_batch.py
+langfuse==4.18.0  # tracing/observability — xem services/agentic_rag.py, agents/pipeline.py
 tavily-python==0.8.5
 nest_asyncio==1.6.0
 pytest==9.1.1  # chạy tests/ (unit test thuần, không cần DB/OpenAI sống)
