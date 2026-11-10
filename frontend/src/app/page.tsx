@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { chatActions, Chat, Message, useChatStore, Passage } from "@/store/chat-store";
+import { chatActions, Chat, Message, useChatStore, Passage, getUpdatedValue } from "@/store/chat-store";
 import {
   Plus, Search, MoreHorizontal, Pin, Trash2, Pencil,
   MessageCircle, ChevronLeft, ChevronRight, ChevronDown,
@@ -196,7 +196,7 @@ export default function Home() {
       const res = await fetch("/api/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptSent, history: nextMessages, query_mode: queryMode }),
+        body: JSON.stringify({ prompt: promptSent, history: nextMessages, query_mode: queryMode, chat_id: chat._id }),
       });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
@@ -301,6 +301,34 @@ export default function Home() {
   const filtered      = chats.filter((c) => (c.title ?? "").toLowerCase().includes(search.toLowerCase()));
   const pinnedChats   = filtered.filter((c) => c.pinned);
   const unpinnedChats = filtered.filter((c) => !c.pinned);
+
+  // Nhóm các đoạn chat chưa ghim theo mốc thời gian (Hôm nay / 7 ngày trước /
+  // Cũ hơn) — chats đã được sort mới nhất trước (xem sortChats trong
+  // chat-store), nên chỉ cần lọc theo bucket mà không cần sort lại.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const sevenDaysAgoStart = new Date(todayStart);
+  sevenDaysAgoStart.setDate(sevenDaysAgoStart.getDate() - 7);
+
+  const todayChats: Chat[] = [];
+  const last7DaysChats: Chat[] = [];
+  const olderChats: Chat[] = [];
+  for (const chat of unpinnedChats) {
+    const raw = getUpdatedValue(chat);
+    const t = raw ? new Date(raw).getTime() : NaN;
+    if (!Number.isNaN(t) && t >= todayStart.getTime()) {
+      todayChats.push(chat);
+    } else if (!Number.isNaN(t) && t >= sevenDaysAgoStart.getTime()) {
+      last7DaysChats.push(chat);
+    } else {
+      olderChats.push(chat);
+    }
+  }
+  const chatGroups: { label: string; items: Chat[] }[] = [
+    { label: "Hôm nay", items: todayChats },
+    { label: "7 ngày trước", items: last7DaysChats },
+    { label: "Cũ hơn", items: olderChats },
+  ];
 
   // ── Portal-based ChatMenu ────────────────────────────────────────────────────
   // Renders into document.body so it is never clipped by overflow:hidden parents.
@@ -502,16 +530,16 @@ export default function Home() {
             {unpinnedChats.length > 0 && <div className="my-2" style={{ borderTop: "0.5px solid var(--border)" }} />}
           </>
         )}
-        {unpinnedChats.length > 0 && (
-          <>
+        {chatGroups.map(({ label, items }) => items.length > 0 && (
+          <div key={label}>
             <div className="flex items-center gap-1 mb-1 px-2">
               <span className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                <div className="flex items-center gap-1"><Clock size={14} /><span>Gần đây</span></div>
+                <div className="flex items-center gap-1"><Clock size={14} /><span>{label}</span></div>
               </span>
             </div>
-            {unpinnedChats.map((chat) => <ChatItem key={chat._id} chat={chat} />)}
-          </>
-        )}
+            {items.map((chat) => <ChatItem key={chat._id} chat={chat} />)}
+          </div>
+        ))}
         {filtered.length === 0 && (
           <div className="mt-6 flex flex-col items-center gap-2 px-4 text-center">
             <MessageCircle size={22} style={{ color: "var(--text-muted)" }} />

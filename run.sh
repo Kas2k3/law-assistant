@@ -22,6 +22,9 @@ mkdir -p "$LOG_DIR" "$PID_DIR"
 FRONTEND_URL="http://localhost:3000"
 BACKEND_URL="http://127.0.0.1:8001"
 DASHBOARD_URL="http://localhost:8501"
+# Langfuse là dịch vụ cloud (không chạy local qua docker), link cố định tới
+# dashboard "RAG Ops Overview" đã tạo sẵn bằng scripts/setup_langfuse_dashboard.py
+LANGFUSE_URL="https://us.cloud.langfuse.com/project/cmvi4224y0145ad0e2yc3v0fb/dashboards/cmw1jskmg05fuad0kes6nzpos"
 
 # ───────────────────────── helpers ─────────────────────────
 
@@ -200,7 +203,9 @@ cmd_start() {
     echo "  Backend  : $BACKEND_URL (docs: $BACKEND_URL/docs)"
     echo "  phpMyAdmin: http://localhost:8081"
     echo "  Neo4j    : http://localhost:7474"
+    echo "  Langfuse : $LANGFUSE_URL"
     open_url "$FRONTEND_URL"
+    open_url "$LANGFUSE_URL"
 }
 
 cmd_stop() {
@@ -269,6 +274,7 @@ cmd_dashboard() {
 cmd_open() {
     is_running frontend && open_url "$FRONTEND_URL"
     is_running dashboard && open_url "$DASHBOARD_URL"
+    open_url "$LANGFUSE_URL"
 }
 
 usage() {
