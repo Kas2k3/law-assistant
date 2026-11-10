@@ -55,7 +55,7 @@ const initialState: ChatState = {
   error: null,
 };
 
-function getUpdatedValue(chat: Chat) {
+export function getUpdatedValue(chat: Chat) {
   return chat.updated_at ?? chat.updatedAt ?? chat.created_at ?? chat.createdAt ?? "";
 }
 

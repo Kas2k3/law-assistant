@@ -79,6 +79,23 @@ services:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/neo4j:/data
     restart: always
 
+  mongo:
+    # Lưu bền lịch sử chat (frontend/src/lib/chats.ts) — không có service này +
+    # MONGODB_URI trong frontend/.env.local thì chat chỉ sống trong RAM của
+    # tiến trình "npm run dev", mất sạch mỗi lần restart frontend.
+    container_name: law-assistant-mongo
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: always
+
 networks:
   default:
     name: milvus
