@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from fastapi import FastAPI, UploadFile, File
-from langfuse import get_client, observe
+from langfuse import get_client, observe, propagate_attributes
 from openai import OpenAI
 from pydantic import BaseModel, Field
 import json as _json
@@ -54,6 +54,11 @@ class RagChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1)
     history: List[ChatMessage] = Field(default_factory=list)
     query_mode: Literal["normal", "situation"] = "normal"
+    # id cuộc hội thoại ở frontend (chat._id, crypto.randomUUID()) — gắn làm
+    # session_id trên Langfuse để nhóm toàn bộ lượt hỏi-đáp của 1 cuộc hội
+    # thoại lại trong tab Sessions, xem được chi tiết cả cuộc chứ không chỉ
+    # từng trace rời rạc.
+    chat_id: Optional[str] = None
 
 
 class RagChatResponse(BaseModel):
@@ -97,6 +102,26 @@ def _score_outcome(outcome: str, *, is_error: bool = False, is_timeout: bool = F
         client.score_current_trace(name="timeout", value=1 if is_timeout else 0, data_type="BOOLEAN")
 
 
+def _log_trace_io(
+    *,
+    chat_id: Optional[str],
+    query: str,
+    normalized_query: Optional[str],
+    action: str,
+    answer: str,
+    **extra: Any,
+) -> None:
+    """Gắn input/output/metadata chi tiết lên root span (= trace) của lượt hỏi
+    này — để khi mở theo Session (nhóm theo chat_id, xem agents/propagate_attributes
+    ở rag_chat/rag_stream) thấy được đầy đủ nội dung từng lượt trong cả cuộc hội
+    thoại, không chỉ các con số score rời rạc."""
+    get_client().update_current_span(
+        input={"chat_id": chat_id, "query": query, "normalized_query": normalized_query},
+        output={"action": action, "answer": answer},
+        metadata={k: v for k, v in extra.items() if v is not None},
+    )
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health() -> Dict[str, bool]:
@@ -106,6 +131,11 @@ def health() -> Dict[str, bool]:
 @app.post("/rag/chat", response_model=RagChatResponse)
 @observe(name="rag_chat_request")
 def rag_chat(req: RagChatRequest) -> RagChatResponse:
+    with propagate_attributes(session_id=req.chat_id):
+        return _rag_chat_impl(req)
+
+
+def _rag_chat_impl(req: RagChatRequest) -> RagChatResponse:
     t0 = time.perf_counter()
     prompt = req.prompt.strip()
     history_for_processing = [m.model_dump() for m in req.history]
@@ -114,6 +144,7 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
     if decision.action == Action.QUICK_ANSWER:
         answer = decision.answer_text or ""
         _score_outcome("quick")
+        _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=None, action="quick", answer=answer)
         log_live_turn(query=prompt, normalized_query=None, action="quick", answer=answer,
                       elapsed_ms=(time.perf_counter() - t0) * 1000)
         return RagChatResponse(answer=answer, action="quick")
@@ -124,6 +155,7 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
             "Bạn hãy cung cấp thông tin cụ thể hơn để tôi có thể hỗ trợ tốt nhất. Cảm ơn bạn!"
         )
         _score_outcome("spam")
+        _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=None, action="spam", answer=answer)
         log_live_turn(query=prompt, normalized_query=None, action="spam", answer=answer,
                       elapsed_ms=(time.perf_counter() - t0) * 1000)
         return RagChatResponse(action="spam", answer=answer)
@@ -134,6 +166,7 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
             "Bạn có muốn mình chuyển tiếp vấn đề cho cán bộ trực tiếp xử lý không?"
         )
         _score_outcome("escalate")
+        _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=None, action="escalate", answer=answer)
         log_live_turn(query=prompt, normalized_query=None, action="escalate", answer=answer,
                       elapsed_ms=(time.perf_counter() - t0) * 1000)
         return RagChatResponse(action="escalate", answer=answer)
@@ -155,6 +188,7 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
             "Bạn có thể hỏi về các quy định, điều luật cụ thể, hoặc quy trình pháp lý mà bạn đang thắc mắc."
         )
         _score_outcome("rejected")
+        _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="rejected", answer=answer)
         log_live_turn(query=prompt, normalized_query=normalized_query, action="rejected", answer=answer,
                       elapsed_ms=(time.perf_counter() - t0) * 1000)
         return RagChatResponse(action="proceed", normalized_query=normalized_query, answer=answer)
@@ -186,6 +220,8 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
         answer = f"Mình gặp lỗi khi chạy tác tử tìm kiếm: {e}"
         get_client().update_current_span(level="ERROR", status_message=str(e))
         _score_outcome("error", is_error=True, is_timeout=_is_timeout_error(e))
+        _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="error",
+                      answer=answer, error=str(e), situation_mode=is_situation)
         log_live_turn(query=prompt, normalized_query=normalized_query, action="error", answer=answer,
                       elapsed_ms=(time.perf_counter() - t0) * 1000, situation_mode=is_situation)
         return RagChatResponse(action="proceed", normalized_query=normalized_query, answer=answer, passages=[])
@@ -195,6 +231,14 @@ def rag_chat(req: RagChatRequest) -> RagChatResponse:
         "Bạn vui lòng thử lại sau ít phút."
     )
     _score_outcome("proceed")
+    _log_trace_io(
+        chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="proceed",
+        answer=raw_response, iterations=meta.get("iterations"), situation_mode=is_situation,
+        sources_count=len(meta.get("sources", [])), passages_count=len(meta.get("passages", [])),
+        grounding_score=grounding.get("grounding_score"),
+        answer_relevance=grounding.get("answer_relevance"),
+        context_relevance=grounding.get("context_relevance"),
+    )
 
     log_live_turn(
         query=prompt, normalized_query=normalized_query, action="proceed", answer=raw_response,
@@ -233,6 +277,10 @@ def rag_stream(req: RagChatRequest):
     """
     @observe(name="rag_stream_request")
     def event_stream():
+        with propagate_attributes(session_id=req.chat_id):
+            yield from _event_stream_impl()
+
+    def _event_stream_impl():
         t0 = time.perf_counter()
         prompt = req.prompt.strip()
         history_for_processing = [m.model_dump() for m in req.history]
@@ -255,6 +303,7 @@ def rag_stream(req: RagChatRequest):
                 answer = "Mình rất tiếc. Bạn có muốn mình chuyển tiếp cho cán bộ xử lý không?"
                 outcome = "escalate"
             _score_outcome(outcome)
+            _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=None, action=outcome, answer=answer)
             yield f"data: {_json.dumps({'type':'meta','action':decision.action.value,'passages':[]}, ensure_ascii=False)}\n\n"
             for part in _chunk_stream_text(answer):
                 yield f"data: {_json.dumps({'type':'token','text':part}, ensure_ascii=False)}\n\n"
@@ -284,6 +333,7 @@ def rag_stream(req: RagChatRequest):
                 yield f"data: {_json.dumps({'type':'token','text':part}, ensure_ascii=False)}\n\n"
             yield f"data: {_json.dumps({'type':'done'}, ensure_ascii=False)}\n\n"
             _score_outcome("rejected")
+            _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="rejected", answer=answer)
             log_live_turn(query=prompt, normalized_query=normalized_query, action="rejected", answer=answer,
                           elapsed_ms=(time.perf_counter() - t0) * 1000)
             return
@@ -317,6 +367,8 @@ def rag_stream(req: RagChatRequest):
             error_msg = str(e)
             get_client().update_current_span(level="ERROR", status_message=error_msg)
             _score_outcome("error", is_error=True, is_timeout=_is_timeout_error(e))
+            _log_trace_io(chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="error",
+                          answer=error_msg, error=error_msg, situation_mode=is_situation)
             yield f"data: {_json.dumps({'type':'error','message':error_msg}, ensure_ascii=False)}\n\n"
 
         yield f"data: {_json.dumps({'type':'done'}, ensure_ascii=False)}\n\n"
@@ -326,9 +378,18 @@ def rag_stream(req: RagChatRequest):
                           elapsed_ms=(time.perf_counter() - t0) * 1000, situation_mode=is_situation)
         else:
             _score_outcome("proceed")
+            final_answer = "".join(answer_parts).strip()
+            _log_trace_io(
+                chat_id=req.chat_id, query=prompt, normalized_query=normalized_query, action="proceed",
+                answer=final_answer, iterations=meta.get("iterations"), situation_mode=is_situation,
+                sources_count=len(meta.get("sources", [])), passages_count=len(meta.get("passages", [])),
+                grounding_score=grounding.get("grounding_score"),
+                answer_relevance=grounding.get("answer_relevance"),
+                context_relevance=grounding.get("context_relevance"),
+            )
             log_live_turn(
                 query=prompt, normalized_query=normalized_query, action="proceed",
-                answer="".join(answer_parts).strip(),
+                answer=final_answer,
                 retrieved_mapcs=[p.get("mapc") for p in meta.get("passages", []) if p.get("mapc")],
                 grounding_score=grounding.get("grounding_score"),
                 flagged_sentences=grounding.get("flagged_sentences", []),

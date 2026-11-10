@@ -8,6 +8,7 @@ export async function POST(req: Request) {
       prompt?: string;
       history?: { role: "user" | "assistant"; content: string }[];
       query_mode?: "normal" | "situation";
+      chat_id?: string;
     };
 
     if (!body.prompt?.trim()) {
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
         prompt: body.prompt.trim(),
         history: body.history ?? [],
         query_mode: body.query_mode ?? "normal",
+        chat_id: body.chat_id,
       }),
       signal: AbortSignal.timeout(120000),
     });
